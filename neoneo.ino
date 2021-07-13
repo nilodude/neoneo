@@ -33,13 +33,50 @@ void loop() {
 
   aud1 = audioMode ? abs(adc_values[0] - 512) : adc_values[0];
   avg = lambda * aud1 + (1 - lambda) * avg;
+   const int sampleWindow = 70; 
+   int maximum = 210;
+   int val= map(val, 0, 1023, -10, 10);
+   unsigned int sample;
+   unsigned long startMillis= millis();  // Start of sample window
+   unsigned int peakToPeak = 0;   // peak-to-peak level
+
+   unsigned int signalMax = 0;
+   unsigned int signalMin = 200;
+
+   // collect data for 50 mS
+   while (millis() - startMillis < sampleWindow)
+   {
+      sample = adc_values[0];
+
+       if(val<0){
+        sample=sample/(val*(-1));
+        }
+       if(val>0){
+        sample=sample*val;
+        }
+      
+      if (sample < 1024)  // toss out spurious readings
+      {
+         if (sample > signalMax)
+         {
+            signalMax = sample;  // save just the max levels
+         }
+         else if (sample < signalMin)
+         {
+            signalMin = sample;  // save just the min levels
+         }
+      }
+   }
+   peakToPeak = signalMax - signalMin; 
+   int led = map(peakToPeak, 0, maximum, 0, strip.numPixels());
+  
  // avg = (3 * avg + 1 * aud1) /4 ; // lambda 3/4 = 0.75
  // avg = (7 * avg + aud1) >> 3 ; // lambda 7/8 = 0.875
-  avg = 41 * avg /1024;
+  avg = 41 * (avg+512) /1024;
   aud1Offset = (41L * aud1 / 1024L) - 20;
-  red = audioMode ? avg > 20 : aud1Offset < 0;
+  red = audioMode ? led > 20 : aud1Offset < 0;
 
-  colorWipe(audioMode? avg : abs(aud1Offset), red, audioMode, 2);
+  colorWipe(audioMode? led : abs(aud1Offset), red, audioMode, 2);
 
   printTable();
   aux1 = aud1;
@@ -83,6 +120,9 @@ void colorWipe(long value, boolean red, boolean audioMode, int wait) {
     }
   }
 }
+
+
+
 
 void printTable() {
   // if (aud1 != aux1) {
