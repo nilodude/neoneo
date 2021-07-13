@@ -17,6 +17,7 @@ boolean red = HIGH;
 boolean audioMode = LOW;
 long aux1 = 0;
 float lambda = .875;
+int led = 0;
 
 Adafruit_NeoPixel strip(LED_COUNT, LED_PIN, NEO_GRB + NEO_KHZ800);
 
@@ -33,15 +34,15 @@ void loop() {
 
   aud1 = audioMode ? abs(adc_values[0] - 512) : adc_values[0];
   avg = lambda * aud1 + (1 - lambda) * avg;
-   const int sampleWindow = 70; 
-   int maximum = 210;
+   const int sampleWindow = 50; 
+   int maximum = 110;
    int val= map(val, 0, 1023, -10, 10);
    unsigned int sample;
    unsigned long startMillis= millis();  // Start of sample window
    unsigned int peakToPeak = 0;   // peak-to-peak level
 
    unsigned int signalMax = 0;
-   unsigned int signalMin = 200;
+   unsigned int signalMin = 100;
 
    // collect data for 50 mS
    while (millis() - startMillis < sampleWindow)
@@ -68,7 +69,7 @@ void loop() {
       }
    }
    peakToPeak = signalMax - signalMin; 
-   int led = map(peakToPeak, 0, maximum, 0, strip.numPixels());
+   led = map(peakToPeak, 0, maximum, 0, strip.numPixels());
   
  // avg = (3 * avg + 1 * aud1) /4 ; // lambda 3/4 = 0.75
  // avg = (7 * avg + aud1) >> 3 ; // lambda 7/8 = 0.875
@@ -126,9 +127,9 @@ void colorWipe(long value, boolean red, boolean audioMode, int wait) {
 
 void printTable() {
   // if (aud1 != aux1) {
-  Serial.print("avg\taud1Offset\tcolor\tmode");
+  Serial.print("led\taud1Offset\tcolor\tmode");
   Serial.print("\n\n");
-  Serial.print(avg);
+  Serial.print(led);
   Serial.print("\t");
   Serial.print(aud1Offset);
   Serial.print("\t\t");
