@@ -7,17 +7,17 @@
 
 #define LED_PIN    6
 #define LED_COUNT 60
-#define AVG_SAMPLES 4
+#define AmpMax (1024 / 2)
+#define MicSamples (1024*4)
+#define VolumeGainFactorBits 0
 
-int16_t volatile avg_values[AVG_SAMPLES];
-int16_t volatile avg = 0;
+#define cbi(sfr, bit) (_SFR_BYTE(sfr) &= ~_BV(bit))
+#define sbi(sfr, bit) (_SFR_BYTE(sfr) |= _BV(bit))
 
-long aud1, aud1Offset = 0;
+long aud, audNorm, maxi = 0;
 boolean red = HIGH;
 boolean audioMode = LOW;
 long aux1 = 0;
-float lambda = .875;
-int led = 0;
 
 Adafruit_NeoPixel strip(LED_COUNT, LED_PIN, NEO_GRB + NEO_KHZ800);
 
@@ -27,67 +27,74 @@ void setup() {
   strip.show();            // Turn OFF all pixels ASAP
   strip.setBrightness(10); // Set BRIGHTNESS to about 1/25.5 (max = 255)
   audioMode = digitalRead(A3);
-  setup_adc();
+
+  ADMUX |= (1 << REFS0); // Set ADC reference to AVCC
+  ADCSRA = 0xe0 + 4;
+  sbi(ADCSRA, ADPS2);
+  cbi(ADCSRA, ADPS1);
+  sbi(ADCSRA, ADPS0);
+
 }
 
 void loop() {
+  //aud = analogRead(A2);
 
-  aud1 = audioMode ? abs(adc_values[0] - 512) : adc_values[0];
-  avg = lambda * aud1 + (1 - lambda) * avg;
-   const int sampleWindow = 50; 
-   int maximum = 110;
-   int val= map(val, 0, 1023, -10, 10);
-   unsigned int sample;
-   unsigned long startMillis= millis();  // Start of sample window
-   unsigned int peakToPeak = 0;   // peak-to-peak level
+  MeasureVolume();
 
-   unsigned int signalMax = 0;
-   unsigned int signalMin = 100;
 
-   // collect data for 50 mS
-   while (millis() - startMillis < sampleWindow)
-   {
-      sample = adc_values[0];
+  audNorm = (41L * aud / 1024L) - 20;
+  red = audioMode ? audNorm > 20 : audNorm < 0;
 
-       if(val<0){
-        sample=sample/(val*(-1));
-        }
-       if(val>0){
-        sample=sample*val;
-        }
-      
-      if (sample < 1024)  // toss out spurious readings
-      {
-         if (sample > signalMax)
-         {
-            signalMax = sample;  // save just the max levels
-         }
-         else if (sample < signalMin)
-         {
-            signalMin = sample;  // save just the min levels
-         }
-      }
-   }
-   peakToPeak = signalMax - signalMin; 
-   led = map(peakToPeak, 0, maximum, 0, strip.numPixels());
-  
- // avg = (3 * avg + 1 * aud1) /4 ; // lambda 3/4 = 0.75
- // avg = (7 * avg + aud1) >> 3 ; // lambda 7/8 = 0.875
-  avg = 41 * (avg+512) /1024;
-  aud1Offset = (41L * aud1 / 1024L) - 20;
-  red = audioMode ? led > 20 : aud1Offset < 0;
+  colorWipe(audioMode ? audNorm : abs(audNorm), red, audioMode);
 
-  colorWipe(audioMode? led : abs(aud1Offset), red, audioMode, 2);
-
-  printTable();
-  aux1 = aud1;
+  //printGraph();
+  aux1 = aud;
 
   audioMode = digitalRead(A3);
   strip.clear();
 }
 
+void MeasureVolume() {
+  long soundVolAvg = 0, soundVolMax = 0, soundVolRMS = 0, t0 = millis();
 
-void colorWipe(long value, boolean red, boolean audioMode, int wait) {
+  for (int i = 0; i < MicSamples; i++)  {
+    while (!(ADCSRA & /*0x10*/_BV(ADIF))); // wait for adc to be ready (ADIF)
+    sbi(ADCSRA, ADIF); // restart adc
+    byte m = ADCL; // fetch adc data
+    byte j = ADCH;
+    int k = ((int)j << 8) | m; // form into an int
+    int amp = abs(k - AmpMax);
+    amp <<= VolumeGainFactorBits;
+    soundVolMax = max(soundVolMax, amp);
+    soundVolAvg += amp;
+    soundVolRMS += ((long)amp * amp);
+  }
+  soundVolAvg /= MicSamples;
+  soundVolRMS /= MicSamples;
+  float soundVolRMSflt = sqrt(soundVolRMS);
+
+  float dB = 20.0 * log10(soundVolRMSflt / AmpMax);
+
+  // convert from 0 to 100
+//  soundVolAvg = 100 * soundVolAvg / AmpMax;
+//  soundVolMax = 100 * soundVolMax / AmpMax;
+  soundVolRMSflt = 100 *soundVolRMSflt / AmpMax;
+  soundVolRMS = 10 * soundVolRMSflt / 7; // RMS to estimate peak (RMS is 0.7 of the peak in sin)
+
+  // print
+//  Serial.print(millis() - t0);
+//  Serial.print("\t");
+//  Serial.print(soundVolMax);
+//  Serial.print("\t");
+  //Serial.print(soundVolAvg);
+ // Serial.print("\t");
+  //Serial.print(soundVolRMSflt);
+  //Serial.print("\t");
+  Serial.println(dB);
+  
+}
+
+void colorWipe(long value, boolean red, boolean audioMode) {
   uint32_t redColor = strip.Color(255, 0, 0);
   uint32_t greenColor = strip.Color(0, 255, 0);
 
@@ -97,7 +104,7 @@ void colorWipe(long value, boolean red, boolean audioMode, int wait) {
     //AUDIO
     if (value > 20) {
       value = value - 20;
-      for (int i = 1; i <= strip.numPixels(); i++) {
+      for (int i = 1; i <= 20; i++) {
         strip.setPixelColor(i - 1, greenColor);
       }
     }
@@ -123,19 +130,13 @@ void colorWipe(long value, boolean red, boolean audioMode, int wait) {
 }
 
 
+void printGraph() {
 
+  maxi = aud > maxi ? aud : maxi;
+  Serial.print(maxi);
+  Serial.print("\t");
+  Serial.print(1023);
+  Serial.print("\t");
+  Serial.println(aud);
 
-void printTable() {
-  // if (aud1 != aux1) {
-  Serial.print("led\taud1Offset\tcolor\tmode");
-  Serial.print("\n\n");
-  Serial.print(led);
-  Serial.print("\t");
-  Serial.print(aud1Offset);
-  Serial.print("\t\t");
-  Serial.print(red ? "red" : "green");
-  Serial.print("\t");
-  Serial.print(audioMode ? "audio" : "control");
-  Serial.print("\n\n");
-  //}
 }
