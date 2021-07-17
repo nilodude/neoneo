@@ -8,7 +8,7 @@
 #define LED_PIN    6
 #define LED_COUNT 60
 #define AmpMax (1024 / 2)
-#define MicSamples (1024*4)
+#define MicSamples (1024*2)
 #define VolumeGainFactorBits 0
 
 #define cbi(sfr, bit) (_SFR_BYTE(sfr) &= ~_BV(bit))
@@ -18,7 +18,7 @@ long aud, audNorm, maxi = 0;
 boolean red = HIGH;
 boolean audioMode = LOW;
 long aux1 = 0;
-
+float dB = 0;
 Adafruit_NeoPixel strip(LED_COUNT, LED_PIN, NEO_GRB + NEO_KHZ800);
 
 void setup() {
@@ -39,22 +39,33 @@ void setup() {
 void loop() {
   //aud = analogRead(A2);
 
-  MeasureVolume();
+  aud = MeasureVolume();
+  //0hz -> -3dB, 20kHz -> -13dB
+  //min= -34.1dB ; max= -2.59
+  
+  if(audioMode){
+    //AUDIO
+    audNorm = map(dB,-35.0,-2.00,0,40);
+    red= audNorm > 20;
+  }else{
+    //CONTROL
+    audNorm = (41L * aud / 1024L) - 20;
+    red = audNorm < 0;
+  }
 
+  // dibujar en papel los saltos de db y hacer una LUT pa los leds
+  // 
 
-  audNorm = (41L * aud / 1024L) - 20;
-  red = audioMode ? audNorm > 20 : audNorm < 0;
+  colorWipe(audNorm,red);
 
-  colorWipe(audioMode ? audNorm : abs(audNorm), red, audioMode);
-
-  //printGraph();
+  printGraph();
   aux1 = aud;
 
   audioMode = digitalRead(A3);
   strip.clear();
 }
 
-void MeasureVolume() {
+long MeasureVolume() {
   long soundVolAvg = 0, soundVolMax = 0, soundVolRMS = 0, t0 = millis();
 
   for (int i = 0; i < MicSamples; i++)  {
@@ -67,13 +78,13 @@ void MeasureVolume() {
     amp <<= VolumeGainFactorBits;
     soundVolMax = max(soundVolMax, amp);
     soundVolAvg += amp;
-    soundVolRMS += ((long)amp * amp);
+    soundVolRMS += (long(amp) * amp);
   }
   soundVolAvg /= MicSamples;
   soundVolRMS /= MicSamples;
   float soundVolRMSflt = sqrt(soundVolRMS);
 
-  float dB = 20.0 * log10(soundVolRMSflt / AmpMax);
+  dB = 20.0 * log10(soundVolRMSflt / AmpMax);
 
   // convert from 0 to 100
 //  soundVolAvg = 100 * soundVolAvg / AmpMax;
@@ -88,18 +99,18 @@ void MeasureVolume() {
 //  Serial.print("\t");
   //Serial.print(soundVolAvg);
  // Serial.print("\t");
-  //Serial.print(soundVolRMSflt);
+  //Serial.print((long)dB);
   //Serial.print("\t");
-  Serial.println(dB);
-  
+  //Serial.println(dB);
+  return long(dB);
 }
 
-void colorWipe(long value, boolean red, boolean audioMode) {
+void colorWipe(long value, boolean red) {
   uint32_t redColor = strip.Color(255, 0, 0);
   uint32_t greenColor = strip.Color(0, 255, 0);
 
   uint32_t color = red ?  redColor : greenColor;
-
+  value = value > 40 ? 40 : value;
   if (audioMode) {
     //AUDIO
     if (value > 20) {
@@ -108,7 +119,7 @@ void colorWipe(long value, boolean red, boolean audioMode) {
         strip.setPixelColor(i - 1, greenColor);
       }
     }
-    for (int i = 1; i <= value + 1; i++) {
+    for (int i = 1; i <= value; i++) {
       strip.setPixelColor(i - 1, color);
     }
     strip.show();
@@ -132,11 +143,13 @@ void colorWipe(long value, boolean red, boolean audioMode) {
 
 void printGraph() {
 
-  maxi = aud > maxi ? aud : maxi;
-  Serial.print(maxi);
+  //maxi = aud > maxi ? aud : maxi;
+  //Serial.print(maxi);
+ // Serial.print("\t");
+  Serial.print(dB);
   Serial.print("\t");
-  Serial.print(1023);
+  Serial.print(aud);
   Serial.print("\t");
-  Serial.println(aud);
+  Serial.println(audNorm);
 
 }
