@@ -15,8 +15,8 @@
 #define sbi(sfr, bit) (_SFR_BYTE(sfr) |= _BV(bit))
 
 long aud, audNorm, maxi = 0;
-long soundVolAvg = 0, soundVolMax = 0, soundVolRMS = 0,t0=0;
-long amp=0,k = 0;
+long soundVolAvg = 0, soundVolMax = 0, soundVolRMS = 0, t0 = 0;
+long amp = 0, k = 0;
 boolean red = HIGH;
 boolean audioMode = LOW;
 long aux1 = 0;
@@ -27,11 +27,12 @@ struct Map {
   long ledNumber;
 };
 
-const Map lut[] ={
-  {-32,1},    {-31,2},    {-30.5,3},    {-30,4},     {-29.5,5}, {-29,6},    {-28.5,7 },    {-28,8 },   {-27.5,9},  {-27,10},
-  {-26.5,11},   {-26,12}, {-25.5,13},   {-25,14},  {-24.5,15},  {-24,16},   {-23.5,17}, {-23,18},  {-22.5,19},  {-22,20},
-  {-21.5,21},   {-21,22}, {-20.5,23},   {-20,24}, {-19,25}, {-18,26},  {-17,27},  {-16,28 },  {-15,29}, {-14,30},
-  {-13,31}, {-12,32}, {-11,33}, {-10,34},  {-9,35}, {-8,36}, {-7,37},    {-5,38},  {-4,39}, {-2,40}};
+const Map lut[] = {
+  { -32, 1},  { -31, 2},  { -30.5, 3},  { -30, 4},  { -29.5, 5}, { -29, 6},    { -28.5, 7 },    { -28, 8 },   { -27.5, 9},  { -27, 10},
+  { -26.5, 11}, { -26, 12}, { -25.5, 13}, { -25, 14},  { -24.5, 15},  { -24, 16},   { -23.5, 17}, { -23, 18},  { -22.5, 19},  { -22, 20},
+  { -21.5, 21}, { -21, 22}, { -20.5, 23}, { -20, 24}, { -19, 25}, { -18, 26},  { -17, 27},  { -16, 28 },  { -15, 29}, { -14, 30},
+  { -13, 31}, { -12, 32}, { -11, 33}, { -10, 34}, { -9, 35}, { -8, 36}, { -7, 37},    { -5, 38},  { -4, 39}, { -2, 40}
+};
 
 Adafruit_NeoPixel strip(LED_COUNT, LED_PIN, NEO_GRB + NEO_KHZ800);
 
@@ -56,29 +57,34 @@ void loop() {
   aud = MeasureVolume();
   //0hz -> -3dB, 20kHz -> -13dB
   //min= -34.1dB ; max= -2.59
-  
-  if(audioMode){
+
+  if (audioMode) {
     //AUDIO
-    
+
     audNorm = db2led(dB);
-    red= audNorm > 20;
-  }else{
+    red = audNorm > 20;
+  } else {
     //CONTROL
     audNorm = (41L * k / 1024L) - 20;
     red = audNorm < 0;
-    audNorm=abs(audNorm);
+    audNorm = abs(audNorm);
   }
 
   // dibujar en papel los saltos de db y hacer una LUT pa los leds
-  // 
+  //
 
-  colorWipe(audNorm,red);
+  colorWipe(audNorm, red);
+
+  //uint32_t off = strip.Color(0, 0, 0, 0);
+  //for (int i = audNorm; i > 0; i--) {
+  //  strip.setPixelColor(i - 1, off);
+  //}
 
   printGraph();
   aux1 = aud;
 
   audioMode = digitalRead(A3);
-  strip.clear();
+  //strip.clear();
 }
 
 long MeasureVolume() {
@@ -104,17 +110,17 @@ long MeasureVolume() {
 
   // convert from 0 to 100
   soundVolAvg = 100 * soundVolAvg / AmpMax;
-//  soundVolMax = 100 * soundVolMax / AmpMax;
-  soundVolRMSflt = 100 *soundVolRMSflt / AmpMax;
+  //  soundVolMax = 100 * soundVolMax / AmpMax;
+  soundVolRMSflt = 100 * soundVolRMSflt / AmpMax;
   soundVolRMS = 10 * soundVolRMSflt / 7; // RMS to estimate peak (RMS is 0.7 of the peak in sin)
 
   // print
-//  Serial.print(millis() - t0);
-//  Serial.print("\t");
-//  Serial.print(soundVolMax);
-//  Serial.print("\t");
+  //  Serial.print(millis() - t0);
+  //  Serial.print("\t");
+  //  Serial.print(soundVolMax);
+  //  Serial.print("\t");
   //Serial.print(soundVolAvg);
- // Serial.print("\t");
+  // Serial.print("\t");
   //Serial.print((long)dB);
   //Serial.print("\t");
   //Serial.println(dB);
@@ -124,7 +130,7 @@ long MeasureVolume() {
 void colorWipe(long value, boolean red) {
   uint32_t redColor = strip.Color(255, 0, 0);
   uint32_t greenColor = strip.Color(0, 255, 0);
-  
+
   uint32_t color = red ?  redColor : greenColor;
   value = value > 40 ? 40 : value;
   if (audioMode) {
@@ -134,12 +140,16 @@ void colorWipe(long value, boolean red) {
       for (int i = 1; i <= 20; i++) {
         strip.setPixelColor(i - 1, greenColor);
       }
+      for (int i = 1; i <= value; i++) {
+        strip.setPixelColor(i - 1, redColor);
+      }
+    } else {
+      strip.clear();
+      for (int i = 1; i <= value; i++) {
+        strip.setPixelColor(i - 1, greenColor);
+      }
     }
-    for (int i = 1; i <= value; i++) {
-      strip.setPixelColor(i - 1, color);
-    }
-    //strip.setPixelColor(value-1, color);
-    strip.show();
+    //strip.show();
 
   } else {
     // CONTROL
@@ -147,38 +157,39 @@ void colorWipe(long value, boolean red) {
       for (int i = 20; i > 20 - 1  - value; i--) {
         strip.setPixelColor(i - 1, redColor);
       }
-      strip.show();
+      //strip.show();
     } else { //GREEN
       for (int i = 1; i <= value + 1; i++) {
         strip.setPixelColor(i - 1, greenColor);
       }
-      strip.show();
+      //strip.show();
     }
   }
+  strip.show();
 }
 
-long db2led(float db){
+long db2led(float db) {
   int low = 0;
-  int up = sizeof(lut)/sizeof(Map) - 1;
-  int index = (low+up)/2;
-//  boolean upper = abs(lut[index].dbValue - dB) <= abs(lut[index-1].dbValue - dB);
-  
-  
-  while((lut[index].dbValue != db) && (low <=up)){
-    if(lut[index].dbValue > dB) up = index-1;
-    else low = index +1;
-    index = (low+up)/2;
+  int up = sizeof(lut) / sizeof(Map) - 1;
+  int index = (low + up) / 2;
+  //  boolean upper = abs(lut[index].dbValue - dB) <= abs(lut[index-1].dbValue - dB);
+
+
+  while ((round(lut[index].dbValue) != round(db)) && (low <= up)) {
+    if (lut[index].dbValue > dB) up = index - 1;
+    else low = index + 1;
+    index = (low + up) / 2;
   }
   return lut[index].ledNumber;
   //long led = pled == 0 ? pled : pled -1;
-  
+
   //if(db < -
 
-  
+
 }
 
 void printGraph() {
-  //Serial.print(dB);
+  Serial.print(dB);
   //Serial.print("\t");
   Serial.print(aud);
   Serial.print("\t");
