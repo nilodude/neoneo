@@ -156,7 +156,7 @@ void colorWipe(long value, boolean shouldBeRed) {
         strip.setPixelColor(i - 1, green);
       }
       for (int i = 1; i <= value; i++) {
-        strip.setPixelColor(i - 1, strip.Color(min(40*i,255),max(127,255-40*i),0));
+        strip.setPixelColor(i - 1, strip.Color(min(40*i,255),max(127,255-30*i),0));
       }
       strip.show();
     } else if( value > 31 ){ 
@@ -165,10 +165,10 @@ void colorWipe(long value, boolean shouldBeRed) {
         strip.setPixelColor(i - 1, green);
       }
       for (int i = 1; i <= 11; i++) {
-        strip.setPixelColor(i - 1, strip.Color(min(40*i,255),max(127,255-40*i),0));
+        strip.setPixelColor(i - 1, strip.Color(min(40*i,255),max(127,255-30*i),0));
       }
       for (int i = 12; i <= value; i++) {
-        strip.setPixelColor(i - 1, strip.Color(255,255-28*(i-11),0));
+        strip.setPixelColor(i - 1, strip.Color(255,max(0,127-14*(i-11)),0));
       }
       strip.show();
     }else {
