@@ -22,6 +22,10 @@ boolean audioMode = LOW;
 long aux1 = 0;
 float dB = 0;
 
+int dropTime = 0;
+int dropDelay = 0;      
+float dropFactor = .85;
+
 struct Map {
   float dbValue;
   long ledNumber;
@@ -60,8 +64,18 @@ void loop() {
 
   if (audioMode) {
     //AUDIO
-
     audNorm = db2led(dB);
+
+    if(audNorm < aux1){
+      dropTime++;
+      if(dropTime > dropDelay){
+        audNorm = aux1 * dropFactor;
+        dropTime = 0;
+      }else{
+        audNorm = aux1;
+      }
+    }
+    
     red = audNorm > 20;
   } else {
     //CONTROL
@@ -85,6 +99,7 @@ void loop() {
 
   audioMode = digitalRead(A3);
   //strip.clear();
+  aux1 = audNorm;
 }
 
 long MeasureVolume() {
