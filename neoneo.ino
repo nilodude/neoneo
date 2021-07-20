@@ -35,7 +35,7 @@ const Map lut[] = {
   { -30.5, 1},  { -30, 2},  { -30, 3},  { -29, 4},  { -29, 5}, { -29, 6},    { -28, 7 },    { -28, 8 },   { -27, 9},  { -27, 10},
   { -26, 11}, { -26, 12}, { -25, 13}, { -25, 14},  { -24, 15},  { -24, 16},   { -23, 17}, { -23, 18},  { -22, 19},  { -22, 20},
   { -21, 21}, { -21, 22}, { -20.5, 23}, { -20, 24}, { -19, 25}, { -18, 26},  { -17, 27},  { -16, 28 },  { -15, 29}, { -14, 30},
-  { -13, 31}, { -12, 32}, { -11, 33}, { -10, 34}, { -9, 35}, { -8, 36}, { -7, 37},    { -5, 38},  { -4, 39}, { -2, 40}
+  { -13, 31}, { -12, 32}, { -11, 33}, { -10, 34}, { -9, 35}, { -8, 36}, { -7, 37},    { -6, 38},  { -5, 39}, { -4, 40}
 };
 
 Adafruit_NeoPixel strip(LED_COUNT, LED_PIN, NEO_GRB + NEO_KHZ800);
@@ -148,6 +148,7 @@ void colorWipe(long value, boolean shouldBeRed) {
   uint32_t orange = strip.Color(255,255,0);
 
   value = value > 40 ? 40 : value;
+  value = 40;
   if (audioMode) {
     //AUDIO
     if (value > 20 && value <= 31) {
@@ -156,7 +157,7 @@ void colorWipe(long value, boolean shouldBeRed) {
         strip.setPixelColor(i - 1, green);
       }
       for (int i = 1; i <= value; i++) {
-        strip.setPixelColor(i - 1, strip.Color(min(39*i,255),max(90,255-1.5*value*i),0));
+        strip.setPixelColor(i - 1, strip.Color(min(23*i,255),max(50,255-10*i),0));
       }
       strip.show();
     } else if( value > 31 ){ 
@@ -165,10 +166,10 @@ void colorWipe(long value, boolean shouldBeRed) {
         strip.setPixelColor(i - 1, green);
       }
       for (int i = 1; i <= 10; i++) {
-        strip.setPixelColor(i - 1, strip.Color(min(39*i,255),max(90,255-1.5*value*i),0));
+        strip.setPixelColor(i - 1, strip.Color(min(23*i,255),max(50,255-10*i),0));
       }
-      for (int i = 10; i <= value; i++) {
-        strip.setPixelColor(i - 1, strip.Color(255,max(0,115-20*(i-9)),0));
+      for (int i = 11; i <= value; i++) {
+        strip.setPixelColor(i - 1, strip.Color(255,max(0,115-20*(i-10)),0));
       }
       strip.show();
     }else {
