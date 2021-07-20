@@ -142,27 +142,41 @@ long MeasureVolume() {
   return long(dB);
 }
 
-void colorWipe(long value, boolean red) {
-  uint32_t redColor = strip.Color(255, 0, 0);
-  uint32_t greenColor = strip.Color(0, 255, 0);
+void colorWipe(long value, boolean shouldBeRed) {
+  uint32_t red = strip.Color(255, 0, 0);
+  uint32_t green = strip.Color(0, 255, 0);
+  uint32_t orange = strip.Color(255,255,0);
 
-  uint32_t color = red ?  redColor : greenColor;
   value = value > 40 ? 40 : value;
   if (audioMode) {
     //AUDIO
-    if (value > 20) {
+    if (value > 20 && value <= 31) {
       value = value - 20;
       for (int i = 1; i <= 20; i++) {
-        strip.setPixelColor(i - 1, greenColor);
+        strip.setPixelColor(i - 1, green);
       }
       for (int i = 1; i <= value; i++) {
-        strip.setPixelColor(i - 1, redColor);
+        strip.setPixelColor(i - 1, strip.Color(min(40*i,255),max(127,255-40*i),0));
       }
-    } else {
+      strip.show();
+    } else if( value > 31 ){ 
+      value = value - 20;
+      for (int i = 1; i <= 20; i++) {
+        strip.setPixelColor(i - 1, green);
+      }
+      for (int i = 1; i <= 11; i++) {
+        strip.setPixelColor(i - 1, strip.Color(min(40*i,255),max(127,255-40*i),0));
+      }
+      for (int i = 12; i <= value; i++) {
+        strip.setPixelColor(i - 1, strip.Color(255,255-28*(i-11),0));
+      }
+      strip.show();
+    }else {
       strip.clear();
       for (int i = 1; i <= value; i++) {
-        strip.setPixelColor(i - 1, greenColor);
+        strip.setPixelColor(i - 1, green);
       }
+      strip.show();
     }
     //strip.show();
 
@@ -170,17 +184,17 @@ void colorWipe(long value, boolean red) {
     // CONTROL
     if (red) { //RED
       for (int i = 20; i > 20 - 1  - value; i--) {
-        strip.setPixelColor(i - 1, redColor);
+        strip.setPixelColor(i - 1, red);
       }
       //strip.show();
     } else { //GREEN
       for (int i = 1; i <= value + 1; i++) {
-        strip.setPixelColor(i - 1, greenColor);
+        strip.setPixelColor(i - 1, green);
       }
       //strip.show();
     }
   }
-  strip.show();
+  //strip.show();
 }
 
 long db2led(float db) {
