@@ -44,7 +44,7 @@ void setup() {
   Serial.begin(9600);
   strip.begin();
   strip.show();            // Turn OFF all pixels ASAP
-  strip.setBrightness(5); // Set BRIGHTNESS to about 1/25.5 (max = 255)
+  strip.setBrightness(2); // Set BRIGHTNESS to about 1/25.5 (max = 255)
   audioMode = digitalRead(A3);
 
   ADMUX |= (1 << REFS0); // Set ADC reference to AVCC
@@ -156,7 +156,7 @@ void colorWipe(long value, boolean shouldBeRed) {
         strip.setPixelColor(i - 1, green);
       }
       for (int i = 1; i <= value; i++) {
-        strip.setPixelColor(i - 1, strip.Color(min(40*i,255),max(127,255-value*i),0));
+        strip.setPixelColor(i - 1, strip.Color(min(39*i,255),max(90,255-1.5*value*i),0));
       }
       strip.show();
     } else if( value > 31 ){ 
@@ -165,10 +165,10 @@ void colorWipe(long value, boolean shouldBeRed) {
         strip.setPixelColor(i - 1, green);
       }
       for (int i = 1; i <= 10; i++) {
-        strip.setPixelColor(i - 1, strip.Color(min(40*i,255),max(127,255-value*i),0));
+        strip.setPixelColor(i - 1, strip.Color(min(39*i,255),max(90,255-1.5*value*i),0));
       }
       for (int i = 10; i <= value; i++) {
-        strip.setPixelColor(i - 1, strip.Color(255,max(0,127-25*(i-9)),0));
+        strip.setPixelColor(i - 1, strip.Color(255,max(0,115-20*(i-9)),0));
       }
       strip.show();
     }else {
