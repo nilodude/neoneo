@@ -94,32 +94,30 @@ void colorWipe(long value) {
   value = value > 40 ? 40 : value;
   //value = 36;
   if (audioMode) { // AUDIO MODE
-    if (value > 20 && value <= 31) { // ORANGE
-      value = value - 20;
-      for (int i = value; i <= 20; i++) {
-        strip.setPixelColor(i - 1, green);
-      }
-      for (int i = 1; i <= value; i++) {
-        strip.setPixelColor(i - 1, greenOrangeFade(i));
-      }
-    } else if ( value > 31 ) {      //  RED
-      value = value - 20;
-      for (int i = value; i <= 20; i++) {
-        strip.setPixelColor(i - 1, green);
-      }
-      for (int i = 1; i <= 10; i++) {
-        strip.setPixelColor(i - 1, greenOrangeFade(i));
-      }
-      for (int i = 11; i <= value; i++) {
-        strip.setPixelColor(i - 1, orangeRedFade(i));
-      }
+    strip.clear();
+    if (value <= 20) {
 
-      //    strip.setPixelColor(value+1, 0);
-    } else {
-      strip.clear();
       for (int i = 1; i <= value; i++) {
         strip.setPixelColor(i - 1, green);
       }
+    } else {
+      if (value > 20) {
+        value = value - 20;
+        for (int i = value; i <= 20; i++) {
+          strip.setPixelColor(i - 1, green);
+        }
+        if (value <= 31) {
+          for (int i = 1; i <= value; i++) {
+            strip.setPixelColor(i - 1, greenOrangeFade(i));
+          }
+          if (value > 31) {
+            for (int i = 11; i <= value; i++) {
+              strip.setPixelColor(i - 1, orangeRedFade(i));
+            }
+          }
+        }
+      }
+      //    strip.setPixelColor(value+1, 0);
     }
   } else { // CONTROL MODE
     strip.clear();
@@ -156,7 +154,7 @@ uint32_t greenOrangeFade(long i) {
 }
 
 uint32_t orangeRedFade(long i) {
-  return strip.Color(255, max(0, 115 - 20 * (i - 10)), 0);
+  return strip.Color(255, max(0, 50 - 30 * (i - 10)), 0);
 }
 
 void printGraph() {
