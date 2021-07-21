@@ -42,10 +42,10 @@ void setup() {
   Serial.begin(9600);
   strip.begin();
   strip.show();            // Turn OFF all pixels ASAP
-  strip.setBrightness(2); // Set BRIGHTNESS to about 1/25.5 (max = 255)
+  strip.setBrightness(3); // Set BRIGHTNESS to about 1/25.5 (max = 255)
   audioMode = digitalRead(A3);
 
-  ADMUX |= (1 << REFS0); // Set ADC reference to AVCC
+  ADMUX |= (1 << REFS0);
   ADCSRA = 0xe0 + 4;
   sbi(ADCSRA, ADPS2);
   cbi(ADCSRA, ADPS1);
@@ -54,12 +54,9 @@ void setup() {
 }
 
 void loop() {
-  //aud = analogRead(A2);
 
   aud = MeasureVolume();
-  //0hz -> -3dB, 20kHz -> -13dB
-  //min= -34.1dB ; max= -2.59
-
+  
   if (audioMode) {
     //AUDIO
     audNorm = db2led(dB);
@@ -73,30 +70,17 @@ void loop() {
         audNorm = aux1;
       }
     }
-    
     red = audNorm > 20;
   } else {
     //CONTROL
     audNorm = (41L * adc / 1024L) - 20;
-    red = audNorm < 0;
-    audNorm = abs(audNorm);
   }
 
-  // dibujar en papel los saltos de db y hacer una LUT pa los leds
-  //
-
-  colorWipe(audNorm, red);
-
-  //uint32_t off = strip.Color(0, 0, 0, 0);
-  //for (int i = audNorm; i > 0; i--) {
-  //  strip.setPixelColor(i - 1, off);
-  //}
+  colorWipe(audNorm);
 
   printGraph();
-  aux1 = aud;
 
   audioMode = digitalRead(A3);
-  //strip.clear();
   aux1 = audNorm;
 }
 
@@ -121,7 +105,7 @@ long MeasureVolume() {
   return long(dB);
 }
 
-void colorWipe(long value, boolean shouldBeRed) {
+void colorWipe(long value) {
   uint32_t red = strip.Color(255, 0, 0);
   uint32_t green = strip.Color(0, 255, 0);
   uint32_t greenT = strip.Color(0, 0, 0,map(value,0,40,255,0));
@@ -167,45 +151,38 @@ void colorWipe(long value, boolean shouldBeRed) {
       }
       strip.show();
     }
-    //strip.show();
-
   } else {
     strip.clear();
     // CONTROL
-    if (red) { //RED
+    if (value <= 0) {
+      //RED
+      value=abs(value);
       for (int i = 20; i > 20 - 1  - value; i--) {
         strip.setPixelColor(i - 1, red);
       }
-      strip.show();
     } else { //GREEN
       for (int i = 1; i <= value + 1; i++) {
         strip.setPixelColor(i - 1, green);
       }
-      strip.show();
     }
-    //strip.show();
+    strip.show();
   }
   //strip.show();
 }
 
 long db2led(float db) {
+  //0hz -> -3dB, 20kHz -> -13dB
+  //min= -34.1dB ; max= -2.59
   int low = 0;
   int up = sizeof(lut) / sizeof(Map) - 1;
   int index = (low + up) / 2;
-  //  boolean upper = abs(lut[index].dbValue - dB) <= abs(lut[index-1].dbValue - dB);
-
-
+  
   while ((round(lut[index].dbValue) != round(db)) && (low <= up)) {
     if (lut[index].dbValue > dB) up = index - 1;
     else low = index + 1;
     index = (low + up) / 2;
   }
   return lut[index].ledNumber;
-  //long led = pled == 0 ? pled : pled -1;
-
-  //if(db < -
-
-
 }
 
 void printGraph() {
