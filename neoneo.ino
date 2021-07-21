@@ -13,7 +13,7 @@
 #define cbi(sfr, bit) (_SFR_BYTE(sfr) &= ~_BV(bit))
 #define sbi(sfr, bit) (_SFR_BYTE(sfr) |= _BV(bit))
 
-long adc = 0,amp = 0,rms = 0,aud=0, audNorm=0,aux=0;
+long adc = 0, amp = 0, rms = 0, aud = 0, audNorm = 0, aux = 0;
 boolean audioMode = LOW;
 float dB = 0;
 float dropFactor = .87;
@@ -34,14 +34,13 @@ Adafruit_NeoPixel strip(LED_COUNT, LED_PIN, NEO_GRB + NEO_KHZ800);
 
 uint32_t red = strip.Color(255, 0, 0);
 uint32_t green = strip.Color(0, 255, 0);
-
-uint32_t orange = strip.Color(255,255,0);
+uint32_t orange = strip.Color(255, 255, 0);
 
 void setup() {
   Serial.begin(9600);
   strip.begin();
   strip.show();            // Turn OFF all pixels ASAP
-  strip.setBrightness(3); // Set BRIGHTNESS to about 1/25.5 (max = 255)
+  strip.setBrightness(2); // Set BRIGHTNESS to about 1/25.5 (max = 255)
   audioMode = digitalRead(A3);
 
   ADMUX |= (1 << REFS0);
@@ -54,15 +53,15 @@ void setup() {
 void loop() {
 
   aud = measure();
-  
+
   if (audioMode) {
     //AUDIO MODE
     audNorm = db2led(dB);
 
-    if(audNorm < aux){
-       audNorm = aux * dropFactor;
+    if (audNorm < aux) {
+      audNorm = aux * dropFactor;
     }
-  } else {         
+  } else {
     //CONTROL MODE
     audNorm = (41L * adc / 1024L) - 20;
   }
@@ -78,78 +77,61 @@ void loop() {
 long measure() {
   rms = 0;
   for (int i = 0; i < NUM_SAMPLES; i++)  {
-    while (!(ADCSRA & _BV(ADIF))); 
-    sbi(ADCSRA, ADIF); 
-    byte adcl = ADCL; 
+    while (!(ADCSRA & _BV(ADIF)));
+    sbi(ADCSRA, ADIF);
+    byte adcl = ADCL;
     byte adch = ADCH;
     adc = ((int)adch << 8) | adcl;
     amp = abs(adc - MEAN);
     rms += (long(amp) * amp);
   }
-    rms /= NUM_SAMPLES;
-  float rmsflt = sqrt(rms);
-
+  rms /= NUM_SAMPLES;
   dB = 20.0 * log10(sqrt(rms) / MEAN);
-
   return long(dB);
 }
 
 void colorWipe(long value) {
-  uint32_t red = strip.Color(255, 0, 0);
-  uint32_t green = strip.Color(0, 255, 0);
-  uint32_t greenT = strip.Color(0, 0, 0,map(value,0,40,255,0));
-  uint32_t orange = strip.Color(255,255,0);
-
   value = value > 40 ? 40 : value;
   //value = 36;
-  if (audioMode) {
-    //AUDIO
-    if (value > 20 && value <= 31) {
+  if (audioMode) { // AUDIO MODE
+    if (value > 20 && value <= 31) { // ORANGE
       value = value - 20;
       for (int i = 1; i <= 20; i++) {
         strip.setPixelColor(i - 1, green);
       }
-      
       for (int i = 1; i <= value; i++) {
-        strip.setPixelColor(i - 1, strip.Color(min(23*i,255),max(50,255-10*i),0));
+        strip.setPixelColor(i - 1, greenOrangeFade(i));
       }
-//      for (int i = value+1; i <= min(20,value+1); i++) {
-//        strip.setPixelColor(i - 1, greenT);
-//        //strip.setPixelColor(i, greenT);
-//      }
       strip.show();
-    } else if( value > 31 ){ 
+    } else if ( value > 31 ) {      //  RED
       value = value - 20;
       for (int i = 1; i <= 20; i++) {
         strip.setPixelColor(i - 1, green);
       }
       for (int i = 1; i <= 10; i++) {
-        strip.setPixelColor(i - 1, strip.Color(min(23*i,255),max(50,255-10*i),0));
+        strip.setPixelColor(i - 1, greenOrangeFade(i));
       }
       for (int i = 11; i <= value; i++) {
-        strip.setPixelColor(i - 1, strip.Color(255,max(0,115-20*(i-10)),0));
+        strip.setPixelColor(i - 1, orangeRedFade(i));
       }
-//      for (int i = value+1; i <= min(20,value+1); i++) {
-//        strip.setPixelColor(i - 1, greenT);
-//      }
+
+      //    strip.setPixelColor(value+1, 0);
+
       strip.show();
-    }else {
+    } else {
       strip.clear();
       for (int i = 1; i <= value; i++) {
         strip.setPixelColor(i - 1, green);
       }
       strip.show();
     }
-  } else {
+  } else { // CONTROL MODE
     strip.clear();
-    // CONTROL
     if (value <= 0) {
-      //RED
       for (int i = 20; i > 20 - 1  - abs(value); i--) {
         strip.setPixelColor(i - 1, red);
       }
     } else {
-      //GREEN
       for (int i = 1; i <= value + 1; i++) {
         strip.setPixelColor(i - 1, green);
       }
@@ -165,7 +147,7 @@ long db2led(float db) {
   int low = 0;
   int up = sizeof(lut) / sizeof(Map) - 1;
   int index = (low + up) / 2;
-  
+
   while ((round(lut[index].dbValue) != round(db)) && (low <= up)) {
     if (lut[index].dbValue > dB) up = index - 1;
     else low = index + 1;
@@ -174,8 +156,12 @@ long db2led(float db) {
   return lut[index].ledNumber;
 }
 
-uint32_t green2(long value){
-  return strip.Color(0, 0, 0,map(value,0,40,255,0));
+uint32_t greenOrangeFade(long i) {
+  return strip.Color(min(29 * i, 255), max(50, 255 - 10 * i), 0);
+}
+
+uint32_t orangeRedFade(long i) {
+  return strip.Color(255, max(0, 115 - 20 * (i - 10)), 0);
 }
 
 void printGraph() {
