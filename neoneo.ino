@@ -8,15 +8,13 @@
 #define LED_PIN    6
 #define LED_COUNT 60
 #define AmpMax (1024 / 2)
-#define MicSamples (1024*3)
-#define VolumeGainFactorBits 0
+#define NUM_SAMPLES (1024*2)
 
 #define cbi(sfr, bit) (_SFR_BYTE(sfr) &= ~_BV(bit))
 #define sbi(sfr, bit) (_SFR_BYTE(sfr) |= _BV(bit))
 
-long aud, audNorm, maxi = 0;
-long soundVolAvg = 0, soundVolMax = 0, soundVolRMS = 0, t0 = 0;
-long amp = 0, k = 0;
+long aud=0, audNorm=0, amp = 0, adc = 0,soundVolRMS = 0;
+
 boolean red = HIGH;
 boolean audioMode = LOW;
 long aux1 = 0;
@@ -79,7 +77,7 @@ void loop() {
     red = audNorm > 20;
   } else {
     //CONTROL
-    audNorm = (41L * k / 1024L) - 20;
+    audNorm = (41L * adc / 1024L) - 20;
     red = audNorm < 0;
     audNorm = abs(audNorm);
   }
@@ -103,42 +101,23 @@ void loop() {
 }
 
 long MeasureVolume() {
-  soundVolAvg = 0, soundVolMax = 0, soundVolRMS = 0, t0 = millis();
+  soundVolRMS = 0;
 
-  for (int i = 0; i < MicSamples; i++)  {
-    while (!(ADCSRA & /*0x10*/_BV(ADIF))); // wait for adc to be ready (ADIF)
-    sbi(ADCSRA, ADIF); // restart adc
-    byte m = ADCL; // fetch adc data
-    byte j = ADCH;
-    k = ((int)j << 8) | m; // form into an int
-    amp = abs(k - AmpMax);
-    amp <<= VolumeGainFactorBits;
-    soundVolMax = max(soundVolMax, amp);
-    soundVolAvg += amp;
+  for (int i = 0; i < NUM_SAMPLES; i++)  {
+    while (!(ADCSRA & _BV(ADIF))); 
+    sbi(ADCSRA, ADIF); 
+    byte adcl = ADCL; 
+    byte adch = ADCH;
+    adc = ((int)adch << 8) | adcl;
+    amp = abs(adc - AmpMax);
     soundVolRMS += (long(amp) * amp);
   }
-  soundVolAvg /= MicSamples;
-  soundVolRMS /= MicSamples;
+  
+  soundVolRMS /= NUM_SAMPLES;
   float soundVolRMSflt = sqrt(soundVolRMS);
 
   dB = 20.0 * log10(soundVolRMSflt / AmpMax);
 
-  // convert from 0 to 100
-  soundVolAvg = 100 * soundVolAvg / AmpMax;
-  //  soundVolMax = 100 * soundVolMax / AmpMax;
-  soundVolRMSflt = 100 * soundVolRMSflt / AmpMax;
-  soundVolRMS = 10 * soundVolRMSflt / 7; // RMS to estimate peak (RMS is 0.7 of the peak in sin)
-
-  // print
-  //  Serial.print(millis() - t0);
-  //  Serial.print("\t");
-  //  Serial.print(soundVolMax);
-  //  Serial.print("\t");
-  //Serial.print(soundVolAvg);
-  // Serial.print("\t");
-  //Serial.print((long)dB);
-  //Serial.print("\t");
-  //Serial.println(dB);
   return long(dB);
 }
 
@@ -161,9 +140,10 @@ void colorWipe(long value, boolean shouldBeRed) {
       for (int i = 1; i <= value; i++) {
         strip.setPixelColor(i - 1, strip.Color(min(23*i,255),max(50,255-10*i),0));
       }
-      for (int i = value+1; i <= min(20,value+1); i++) {
-        strip.setPixelColor(i - 1, greenT);
-      }
+//      for (int i = value+1; i <= min(20,value+1); i++) {
+//        strip.setPixelColor(i - 1, greenT);
+//        //strip.setPixelColor(i, greenT);
+//      }
       strip.show();
     } else if( value > 31 ){ 
       value = value - 20;
@@ -176,9 +156,9 @@ void colorWipe(long value, boolean shouldBeRed) {
       for (int i = 11; i <= value; i++) {
         strip.setPixelColor(i - 1, strip.Color(255,max(0,115-20*(i-10)),0));
       }
-      for (int i = value+1; i <= min(20,value+1); i++) {
-        strip.setPixelColor(i - 1, greenT);
-      }
+//      for (int i = value+1; i <= min(20,value+1); i++) {
+//        strip.setPixelColor(i - 1, greenT);
+//      }
       strip.show();
     }else {
       strip.clear();
@@ -190,18 +170,20 @@ void colorWipe(long value, boolean shouldBeRed) {
     //strip.show();
 
   } else {
+    strip.clear();
     // CONTROL
     if (red) { //RED
       for (int i = 20; i > 20 - 1  - value; i--) {
         strip.setPixelColor(i - 1, red);
       }
-      //strip.show();
+      strip.show();
     } else { //GREEN
       for (int i = 1; i <= value + 1; i++) {
         strip.setPixelColor(i - 1, green);
       }
-      //strip.show();
+      strip.show();
     }
+    //strip.show();
   }
   //strip.show();
 }
@@ -227,7 +209,7 @@ long db2led(float db) {
 }
 
 void printGraph() {
-  Serial.print(dB);
+  Serial.print(adc);
   Serial.print("\t");
   Serial.print(aud);
   Serial.print("\t");
