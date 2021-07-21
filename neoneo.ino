@@ -96,7 +96,7 @@ void colorWipe(long value) {
   if (audioMode) { // AUDIO MODE
     if (value > 20 && value <= 31) { // ORANGE
       value = value - 20;
-      for (int i = 1; i <= 20; i++) {
+      for (int i = value; i <= 20; i++) {
         strip.setPixelColor(i - 1, green);
       }
       for (int i = 1; i <= value; i++) {
@@ -105,7 +105,7 @@ void colorWipe(long value) {
       strip.show();
     } else if ( value > 31 ) {      //  RED
       value = value - 20;
-      for (int i = 1; i <= 20; i++) {
+      for (int i = value; i <= 20; i++) {
         strip.setPixelColor(i - 1, green);
       }
       for (int i = 1; i <= 10; i++) {
