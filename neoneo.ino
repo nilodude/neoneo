@@ -102,7 +102,6 @@ void colorWipe(long value) {
       for (int i = 1; i <= value; i++) {
         strip.setPixelColor(i - 1, greenOrangeFade(i));
       }
-      strip.show();
     } else if ( value > 31 ) {      //  RED
       value = value - 20;
       for (int i = value; i <= 20; i++) {
@@ -116,14 +115,11 @@ void colorWipe(long value) {
       }
 
       //    strip.setPixelColor(value+1, 0);
-
-      strip.show();
     } else {
       strip.clear();
       for (int i = 1; i <= value; i++) {
         strip.setPixelColor(i - 1, green);
       }
-      strip.show();
     }
   } else { // CONTROL MODE
     strip.clear();
@@ -136,9 +132,8 @@ void colorWipe(long value) {
         strip.setPixelColor(i - 1, green);
       }
     }
-    strip.show();
   }
-  //strip.show();
+  strip.show();
 }
 
 long db2led(float db) {
