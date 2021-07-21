@@ -7,21 +7,15 @@
 
 #define LED_PIN    6
 #define LED_COUNT 60
-#define AmpMax (1024 / 2)
+#define MEAN (1024 / 2)
 #define NUM_SAMPLES (1024*2)
 
 #define cbi(sfr, bit) (_SFR_BYTE(sfr) &= ~_BV(bit))
 #define sbi(sfr, bit) (_SFR_BYTE(sfr) |= _BV(bit))
 
-long aud=0, audNorm=0, amp = 0, adc = 0,soundVolRMS = 0;
-
-boolean red = HIGH;
+long adc = 0,amp = 0,rms = 0,aud=0, audNorm=0,aux=0;
 boolean audioMode = LOW;
-long aux1 = 0;
 float dB = 0;
-
-int dropTime = 0;
-int dropDelay = 0;      
 float dropFactor = .87;
 
 struct Map {
@@ -38,6 +32,11 @@ const Map lut[] = {
 
 Adafruit_NeoPixel strip(LED_COUNT, LED_PIN, NEO_GRB + NEO_KHZ800);
 
+uint32_t red = strip.Color(255, 0, 0);
+uint32_t green = strip.Color(0, 255, 0);
+
+uint32_t orange = strip.Color(255,255,0);
+
 void setup() {
   Serial.begin(9600);
   strip.begin();
@@ -50,29 +49,21 @@ void setup() {
   sbi(ADCSRA, ADPS2);
   cbi(ADCSRA, ADPS1);
   sbi(ADCSRA, ADPS0);
-
 }
 
 void loop() {
 
-  aud = MeasureVolume();
+  aud = measure();
   
   if (audioMode) {
-    //AUDIO
+    //AUDIO MODE
     audNorm = db2led(dB);
 
-    if(audNorm < aux1){
-      dropTime++;
-      if(dropTime > dropDelay){
-        audNorm = aux1 * dropFactor;
-        dropTime = 0;
-      }else{
-        audNorm = aux1;
-      }
+    if(audNorm < aux){
+       audNorm = aux * dropFactor;
     }
-    red = audNorm > 20;
-  } else {
-    //CONTROL
+  } else {         
+    //CONTROL MODE
     audNorm = (41L * adc / 1024L) - 20;
   }
 
@@ -81,26 +72,24 @@ void loop() {
   printGraph();
 
   audioMode = digitalRead(A3);
-  aux1 = audNorm;
+  aux = audNorm;
 }
 
-long MeasureVolume() {
-  soundVolRMS = 0;
-
+long measure() {
+  rms = 0;
   for (int i = 0; i < NUM_SAMPLES; i++)  {
     while (!(ADCSRA & _BV(ADIF))); 
     sbi(ADCSRA, ADIF); 
     byte adcl = ADCL; 
     byte adch = ADCH;
     adc = ((int)adch << 8) | adcl;
-    amp = abs(adc - AmpMax);
-    soundVolRMS += (long(amp) * amp);
+    amp = abs(adc - MEAN);
+    rms += (long(amp) * amp);
   }
-  
-  soundVolRMS /= NUM_SAMPLES;
-  float soundVolRMSflt = sqrt(soundVolRMS);
+    rms /= NUM_SAMPLES;
+  float rmsflt = sqrt(rms);
 
-  dB = 20.0 * log10(soundVolRMSflt / AmpMax);
+  dB = 20.0 * log10(sqrt(rms) / MEAN);
 
   return long(dB);
 }
@@ -156,11 +145,11 @@ void colorWipe(long value) {
     // CONTROL
     if (value <= 0) {
       //RED
-      value=abs(value);
-      for (int i = 20; i > 20 - 1  - value; i--) {
+      for (int i = 20; i > 20 - 1  - abs(value); i--) {
         strip.setPixelColor(i - 1, red);
       }
-    } else { //GREEN
+    } else {
+      //GREEN
       for (int i = 1; i <= value + 1; i++) {
         strip.setPixelColor(i - 1, green);
       }
@@ -183,6 +172,10 @@ long db2led(float db) {
     index = (low + up) / 2;
   }
   return lut[index].ledNumber;
+}
+
+uint32_t green2(long value){
+  return strip.Color(0, 0, 0,map(value,0,40,255,0));
 }
 
 void printGraph() {
