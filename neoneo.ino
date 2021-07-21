@@ -13,7 +13,7 @@
 #define cbi(sfr, bit) (_SFR_BYTE(sfr) &= ~_BV(bit))
 #define sbi(sfr, bit) (_SFR_BYTE(sfr) |= _BV(bit))
 
-long adc = 0, amp = 0, rms = 0, aud = 0, audNorm = 0, aux = 0;
+long adc = 0, amp = 0, rms = 0, aud = 0, audNorm = 0, aux = 0, led = 0;
 boolean audioMode = LOW;
 float dB = 0;
 float dropFactor = .87;
@@ -34,7 +34,6 @@ Adafruit_NeoPixel strip(LED_COUNT, LED_PIN, NEO_GRB + NEO_KHZ800);
 
 uint32_t red = strip.Color(255, 0, 0);
 uint32_t green = strip.Color(0, 255, 0);
-uint32_t orange = strip.Color(255, 255, 0);
 
 void setup() {
   Serial.begin(9600);
@@ -51,37 +50,40 @@ void setup() {
 }
 
 void loop() {
-
-  aud = measure();
+  measure(2);
 
   if (audioMode) {
     //AUDIO MODE
     audNorm = db2led(dB);
-
-    if (audNorm < aux) {
-      audNorm = aux * dropFactor;
-    }
   } else {
     //CONTROL MODE
     audNorm = (41L * adc / 1024L) - 20;
   }
-
   colorWipe(audNorm);
-
-  printGraph();
-
+  printValues();
   audioMode = digitalRead(A3);
   aux = audNorm;
 }
 
-long measure() {
+long measure(int channel) {
   rms = 0;
+  
   for (int i = 0; i < NUM_SAMPLES; i++)  {
-    while (!(ADCSRA & _BV(ADIF)));
+    while (!(ADCSRA & _BV(ADIF))) {
+      if (channel == 2) {
+        ADMUX |= (1 << MUX1);
+      } else if (channel == 0) {
+        ADMUX |= (0 << MUX1);
+      } else if (channel == 1) {
+        ADMUX |= (0 << MUX1) | (1 << MUX0);
+      }
+    }
+    Serial.println(ADMUX);
     sbi(ADCSRA, ADIF);
     byte adcl = ADCL;
     byte adch = ADCH;
     adc = ((int)adch << 8) | adcl;
+
     amp = abs(adc - MEAN);
     rms += (long(amp) * amp);
   }
@@ -90,45 +92,33 @@ long measure() {
   return long(dB);
 }
 
+
 void colorWipe(long value) {
   value = value > 40 ? 40 : value;
   //value = 36;
   if (audioMode) { // AUDIO MODE
     strip.clear();
     if (value <= 20) {
-
-      for (int i = 1; i <= value; i++) {
+      for (int i = 1; i <= value; i++)
         strip.setPixelColor(i - 1, green);
-      }
     } else {
       if (value > 20) {
         value = value - 20;
-        for (int i = value; i <= 20; i++) {
+        for (int i = value; i <= 20; i++)
           strip.setPixelColor(i - 1, green);
-        }
-        if (value <= 31) {
-          for (int i = 1; i <= value; i++) {
-            strip.setPixelColor(i - 1, greenOrangeFade(i));
-          }
-          if (value > 31) {
-            for (int i = 11; i <= value; i++) {
-              strip.setPixelColor(i - 1, orangeRedFade(i));
-            }
-          }
-        }
+        for (int i = 1; i <= value; i++)
+          strip.setPixelColor(i - 1, greenRedFade(i));
       }
       //    strip.setPixelColor(value+1, 0);
     }
   } else { // CONTROL MODE
     strip.clear();
     if (value <= 0) {
-      for (int i = 20; i > 20 - 1  - abs(value); i--) {
+      for (int i = 20; i > 20 - 1  - abs(value); i--)
         strip.setPixelColor(i - 1, red);
-      }
     } else {
-      for (int i = 1; i <= value + 1; i++) {
+      for (int i = 1; i <= value + 1; i++)
         strip.setPixelColor(i - 1, green);
-      }
     }
   }
   strip.show();
@@ -146,21 +136,23 @@ long db2led(float db) {
     else low = index + 1;
     index = (low + up) / 2;
   }
-  return lut[index].ledNumber;
+  led = lut[index].ledNumber;
+  if (led < aux)
+    led = aux * dropFactor;
+    
+  return led;
 }
 
-uint32_t greenOrangeFade(long i) {
-  return strip.Color(min(29 * i, 255), max(50, 255 - 10 * i), 0);
+uint32_t greenRedFade(long i) {
+  int r = min(255, 40 + i * 25);
+  int g = max(0, 240 - i * 15);
+  return strip.Color(r , g , 0);
 }
 
-uint32_t orangeRedFade(long i) {
-  return strip.Color(255, max(0, 50 - 30 * (i - 10)), 0);
-}
-
-void printGraph() {
+void printValues() {
   Serial.print(adc);
   Serial.print("\t");
-  Serial.print(aud);
+  Serial.print(dB);
   Serial.print("\t");
   Serial.println(audNorm);
 }
