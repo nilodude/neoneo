@@ -9,7 +9,7 @@
 #define LED_PIN    6
 #define LED_COUNT 60
 #define MEAN (1024 / 2)
-#define NUM_SAMPLES (1024*2)
+#define NUM_SAMPLES (8)
 
 #define cbi(sfr, bit) (_SFR_BYTE(sfr) &= ~_BV(bit))
 #define sbi(sfr, bit) (_SFR_BYTE(sfr) |= _BV(bit))
@@ -42,16 +42,17 @@ void setup() {
   strip.show();            // Turn OFF all pixels ASAP
   strip.setBrightness(2); // Set BRIGHTNESS to about 1/25.5 (max = 255)
   audioMode = digitalRead(SW);
-  ADMUX |= (1 << REFS0);
-  ADCSRA = 0xe0 + 4;
-  sbi(ADCSRA, ADPS2);
-  cbi(ADCSRA, ADPS1);
-  sbi(ADCSRA, ADPS0);
+//  ADMUX |= (1 << REFS0);
+//  ADCSRA = 0xe0 + 4;
+//  sbi(ADCSRA, ADPS2);
+//  cbi(ADCSRA, ADPS1);
+//  sbi(ADCSRA, ADPS0);
 }
 
 void loop() {
-  measure(2);
-
+  
+  measure(audioMode ? NUM_SAMPLES : 1);
+  
   if (audioMode) {
     //AUDIO MODE
     audNorm = db2led(dB);
@@ -65,11 +66,11 @@ void loop() {
   aux = audNorm;
 }
 
-long measure(int channel) {
+long measure(int numsamples) {
   rms = 0;
   
-  for (int i = 0; i < NUM_SAMPLES; i++)  {
-    while (!(ADCSRA & _BV(ADIF))) 
+  for (int i = 0; i < numsamples; i++)  {
+    //while (!(ADCSRA & _BV(ADIF))) 
   //  {
  //     if (channel == 2) {
   //      ADMUX |= (1 << MUX1);
@@ -80,14 +81,15 @@ long measure(int channel) {
   //    }
     //}
     //Serial.print(ADMUX);
-    sbi(ADCSRA, ADIF);
-    byte adcl = ADCL;
-    byte adch = ADCH;
-    adc = ((int)adch << 8) | adcl;
+//    sbi(ADCSRA, ADIF);
+//    byte adcl = ADCL;
+//    byte adch = ADCH;
+//    adc = ((int)adch << 8) | adcl;
+    adc = analogRead(A2);
     amp = abs(adc - MEAN);
     rms += (long(amp) * amp);
   }
-  rms /= NUM_SAMPLES;
+  rms /= numsamples;
   dB = 20.0 * log10(sqrt(rms) / MEAN);
   return long(dB);
 }
@@ -152,9 +154,9 @@ uint32_t greenRedFade(long i) {
 void printValues() {
   Serial.print(adc);
   Serial.print("\t");
-  Serial.print(ADCH);
+  Serial.print(audioMode ? "audio" : "control");
   Serial.print("\t");
-  Serial.print(audioMode);
+  Serial.print(dB);
   Serial.print("\t");
   Serial.println(audNorm);
 }
