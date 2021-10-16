@@ -17,7 +17,7 @@
 long adc = 0, amp = 0, rms = 0, audNorm = 0, aux = 0, led = 0;
 boolean audioMode = LOW;
 float dB = 0;
-float dropFactor = .875;
+float dropFactor = .89;
 
 struct Map {
   float dbValue;
@@ -50,6 +50,8 @@ Adafruit_NeoPixel strip(LED_COUNT, LED_PIN, NEO_GRB + NEO_KHZ800);
 
 uint32_t red = strip.Color(255, 0, 0);
 uint32_t green = strip.Color(0, 255, 0);
+
+int analoggRead(uint8_t pin);
 
 void setup() {
   Serial.begin(9600);
@@ -86,6 +88,39 @@ void loop() {
   aux = audNorm;
 }
 
+//LAPUTACLAVE:
+//https://garretlab.web.fc2.com/en/arduino/inside/hardware/arduino/avr/cores/arduino/wiring_analog.c/analogRead.html
+int analoggRead(uint8_t pin)
+{
+    uint8_t analog_reference = DEFAULT;
+    uint8_t low, high;
+ 
+    if (pin >= 14) pin -= 14; // allow for channel or pin numbers
+ 
+    // set the analog reference (high two bits of ADMUX) and select the
+    // channel (low 4 bits).  this also sets ADLAR (left-adjust result)
+    // to 0 (the default).
+    ADMUX = (analog_reference << 6) | (pin & 0x07);
+ 
+    // without a delay, we seem to read from the wrong channel
+    //delay(1);
+ 
+    // start the conversion
+    sbi(ADCSRA, ADSC);
+ 
+    // ADSC is cleared when the conversion finishes
+    while (bit_is_set(ADCSRA, ADSC));
+ 
+    // we have to read ADCL first; doing so locks both ADCL
+    // and ADCH until ADCH is read.  reading ADCL second would
+    // cause the results of each conversion to be discarded,
+    // as ADCL and ADCH would be locked when it completed.
+    low  = ADCL;
+    high = ADCH;
+ 
+    // combine the two bytes
+    return (high << 8) | low;
+}
 void measure(int channel) {
   rms = 0;
   int numsamples = audioMode ? NUM_SAMPLES : 1;
@@ -105,7 +140,7 @@ void measure(int channel) {
 //    byte adcl = ADCL;
 //    byte adch = ADCH;
 //    adc = ((int)adch << 8) | adcl;
-    adc = analogRead(channel)+28;  
+    adc = analoggRead(channel)+28;  
     amp = abs(adc - MEAN);
     rms += (long(amp) * amp);
   }
