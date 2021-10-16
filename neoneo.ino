@@ -87,7 +87,17 @@ void loop() {
   audioMode = digitalRead(SW);
   aux = audNorm;
 }
-
+void measure(int channel) {
+  rms = 0;
+  int numsamples = audioMode ? NUM_SAMPLES : 1;
+  for (int i = 0; i < numsamples; i++)  {
+    adc = analoggRead(channel)+28;  
+    amp = abs(adc - MEAN);
+    rms += (long(amp) * amp);
+  }
+  rms /= numsamples;
+  dB = 20.0 * log10(sqrt(rms) / MEAN);
+}
 //LAPUTACLAVE:
 //https://garretlab.web.fc2.com/en/arduino/inside/hardware/arduino/avr/cores/arduino/wiring_analog.c/analogRead.html
 int analoggRead(uint8_t pin)
@@ -121,33 +131,7 @@ int analoggRead(uint8_t pin)
     // combine the two bytes
     return (high << 8) | low;
 }
-void measure(int channel) {
-  rms = 0;
-  int numsamples = audioMode ? NUM_SAMPLES : 1;
-  for (int i = 0; i < numsamples; i++)  {
-    //while (!(ADCSRA & _BV(ADIF))) 
-  //  {
- //     if (channel == 2) {
-  //      ADMUX |= (1 << MUX1);
-  //    } else if (channel == 0) {
-  //      ADMUX |= (0 << MUX1);
-  //    } else if (channel == 1) {
-   //     ADMUX |= (0 << MUX1) | (1 << MUX0);
-  //    }
-    //}
-    //Serial.print(ADMUX);
-//    sbi(ADCSRA, ADIF);
-//    byte adcl = ADCL;
-//    byte adch = ADCH;
-//    adc = ((int)adch << 8) | adcl;
-    adc = analoggRead(channel)+28;  
-    amp = abs(adc - MEAN);
-    rms += (long(amp) * amp);
-  }
-  rms /= numsamples;
-  dB = 20.0 * log10(sqrt(rms) / MEAN);
-  
-}
+
 
 
 void colorWipe(long value) {
@@ -164,7 +148,7 @@ void colorWipe(long value) {
         for (int i = value; i <= 20; i++)
           strip.setPixelColor(i - 1, green);
         for (int i = 1; i <= value; i++)
-          strip.setPixelColor(i - 1, greenRedFade(i));
+          strip.setPixelColor(i - 1, red);
       }
       //    strip.setPixelColor(value+1, 0);
     }
