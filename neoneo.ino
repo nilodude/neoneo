@@ -5,7 +5,7 @@
 #include <avr/power.h> // Required for 16 MHz Adafruit Trinket
 #endif
 
-#define SW 2
+#define SW1 2
 #define LED_PIN    6
 #define LED_COUNT 60
 #define MEAN (512)
@@ -15,7 +15,8 @@
 #define sbi(sfr, bit) (_SFR_BYTE(sfr) |= _BV(bit))
 
 long adc = 0, amp = 0, rms = 0, audNorm = 0, aux = 0, led = 0;
-boolean audioMode = LOW;
+long audNorm1 = 0;
+boolean audioMode1 = LOW;
 float dB = 0;
 float dropFactor = .89;
 
@@ -58,7 +59,7 @@ void setup() {
   strip.begin();
   strip.show();            // Turn OFF all pixels ASAP
   strip.setBrightness(2); // Set BRIGHTNESS to about 1/25.5 (max = 255)
-  audioMode = digitalRead(SW);
+  audioMode1 = digitalRead(SW1);
   inputs[0].channel = 2;
   inputs[1].channel = 0;
   inputs[2].channel = 1; 
@@ -71,23 +72,17 @@ void setup() {
 
 void loop() {
   
-  measure(2);
+  audNorm1 = measure(2, audioMode1);
   //measure(input2);
   //measure(input3);
   
-  if (audioMode) {
-    //AUDIO MODE
-    audNorm = db2led(dB);
-  } else {
-    //CONTROL MODE
-    audNorm = -((41L * adc / 1024L) - 20);
-  }
-  colorWipe(audNorm);
+  
+  colorWipe(audNorm1);
   printValues();
-  audioMode = digitalRead(SW);
+  audioMode1 = digitalRead(SW1);
   aux = audNorm;
 }
-void measure(int channel) {
+long measure(int channel, boolean audioMode) {
   rms = 0;
   int numsamples = audioMode ? NUM_SAMPLES : 1;
   for (int i = 0; i < numsamples; i++)  {
@@ -97,6 +92,15 @@ void measure(int channel) {
   }
   rms /= numsamples;
   dB = 20.0 * log10(sqrt(rms) / MEAN);
+
+  if (audioMode) {
+    //AUDIO MODE
+    audNorm = db2led(dB);
+  } else {
+    //CONTROL MODE
+    audNorm = -((41L * adc / 1024L) - 20);
+  }
+  return audNorm;  
 }
 //LAPUTACLAVE:
 //https://garretlab.web.fc2.com/en/arduino/inside/hardware/arduino/avr/cores/arduino/wiring_analog.c/analogRead.html
@@ -137,7 +141,7 @@ int analoggRead(uint8_t pin)
 void colorWipe(long value) {
   value = value > 40 ? 40 : value;
   //value = 36;
-  if (audioMode) { // AUDIO MODE
+  if (audioMode1) { // AUDIO MODE
     strip.clear();
     if (value <= 20) {
       for (int i = 1; i <= value; i++)
@@ -193,7 +197,7 @@ uint32_t greenRedFade(long i) {
 void printValues() {
   Serial.print(adc);
   Serial.print("\t");
-  Serial.print(audioMode ? "audio" : "control");
+  Serial.print(audioMode1 ? "audio" : "control");
   Serial.print("\t");
   Serial.print(dB);
   Serial.print("\t");
