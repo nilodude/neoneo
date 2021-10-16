@@ -7,9 +7,9 @@
 #define SW1 2
 #define SW2 4
 #define SW3 3
-#define IN1 2
-#define IN2 0
-#define IN3 1
+#define IN1 A2
+#define IN2 A0
+#define IN3 A1
 #define OFF1 0
 #define OFF2 20
 #define OFF3 40
@@ -71,9 +71,9 @@ void setup() {
 
 void loop() {
   
-  audNorm1 = measure(IN1, audioMode1);
-  audNorm2 = measure(IN2, audioMode2);
-  audNorm3 = measure(IN3, audioMode3);
+  audNorm1 = measure(IN1, audioMode1,aux1, led1);
+  audNorm2 = measure(IN2, audioMode2,aux2, led2);
+  audNorm3 = measure(IN3, audioMode3,aux3, led3);
    
   colorWipe();
   
@@ -87,7 +87,7 @@ void loop() {
   
   printValues();
 }
-long measure(int channel, boolean audioMode) {
+long measure(int channel, boolean audioMode,long aux,int led) {
   rms = 0;
   int numsamples = audioMode ? NUM_SAMPLES : 1;
   for (int i = 0; i < numsamples; i++)  {
@@ -100,7 +100,7 @@ long measure(int channel, boolean audioMode) {
 
   if (audioMode) {
     //AUDIO MODE
-    audNorm = db2led(dB);
+    audNorm = db2led(dB,aux, led);
   } else {
     //CONTROL MODE
     audNorm = -((41L * adc / 1024L) - 20);
@@ -192,7 +192,7 @@ void controlWipe(int value, int offset){
 }
 
 
-long db2led(float db) {
+long db2led(float db, long aux, int led) {
   //0hz -> -3dB, 20kHz -> -13dB
   //min= -34.1dB ; max= -2.59
   int low = 0;
@@ -204,11 +204,11 @@ long db2led(float db) {
     else low = index + 1;
     index = (low + up) / 2;
   }
-  led1 = lut[index].ledNumber;
-  if (led1 < aux1)
-    led1 = aux1 * dropFactor;
+  led = lut[index].ledNumber;
+  if (led < aux)
+    led = aux * dropFactor;
     
-  return led1;
+  return led;
 }
 
 uint32_t greenRedFade(long i) {
