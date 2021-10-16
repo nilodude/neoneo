@@ -8,16 +8,16 @@
 #define SW 2
 #define LED_PIN    6
 #define LED_COUNT 60
-#define MEAN (1024 / 2)
-#define NUM_SAMPLES (8)
+#define MEAN (512)
+#define NUM_SAMPLES (64)
 
 #define cbi(sfr, bit) (_SFR_BYTE(sfr) &= ~_BV(bit))
 #define sbi(sfr, bit) (_SFR_BYTE(sfr) |= _BV(bit))
 
-long adc = 0, amp = 0, rms = 0, aud = 0, audNorm = 0, aux = 0, led = 0;
+long adc = 0, amp = 0, rms = 0, audNorm = 0, aux = 0, led = 0;
 boolean audioMode = LOW;
 float dB = 0;
-float dropFactor = .87;
+float dropFactor = .875;
 
 struct Map {
   float dbValue;
@@ -30,6 +30,21 @@ const Map lut[] = {
   { -21, 21}, { -21, 22}, { -20.5, 23}, { -20, 24}, { -19, 25}, { -18, 26},  { -17, 27},  { -16, 28 },  { -15, 29}, { -14, 30},
   { -13, 31}, { -12, 32}, { -11, 33}, { -10, 34}, { -9, 35}, { -8, 36}, { -7, 37},    { -6, 38},  { -5, 39}, { -4, 40}
 };
+struct Input{
+  int channel;
+  long adc=0;
+  long amp=0;
+  long rms=0;
+  long audNorm=0;
+  long aux=0;
+  boolean audioMode = LOW;
+  float dB = 0;  
+};
+Input input1;
+Input input2;
+Input input3;
+
+Input inputs[] = { input1,input2, input3};
 
 Adafruit_NeoPixel strip(LED_COUNT, LED_PIN, NEO_GRB + NEO_KHZ800);
 
@@ -42,6 +57,9 @@ void setup() {
   strip.show();            // Turn OFF all pixels ASAP
   strip.setBrightness(2); // Set BRIGHTNESS to about 1/25.5 (max = 255)
   audioMode = digitalRead(SW);
+  inputs[0].channel = 2;
+  inputs[1].channel = 0;
+  inputs[2].channel = 1; 
 //  ADMUX |= (1 << REFS0);
 //  ADCSRA = 0xe0 + 4;
 //  sbi(ADCSRA, ADPS2);
@@ -51,7 +69,9 @@ void setup() {
 
 void loop() {
   
-  measure(audioMode ? NUM_SAMPLES : 1);
+  measure(2);
+  //measure(input2);
+  //measure(input3);
   
   if (audioMode) {
     //AUDIO MODE
@@ -66,9 +86,9 @@ void loop() {
   aux = audNorm;
 }
 
-long measure(int numsamples) {
+void measure(int channel) {
   rms = 0;
-  
+  int numsamples = audioMode ? NUM_SAMPLES : 1;
   for (int i = 0; i < numsamples; i++)  {
     //while (!(ADCSRA & _BV(ADIF))) 
   //  {
@@ -85,13 +105,13 @@ long measure(int numsamples) {
 //    byte adcl = ADCL;
 //    byte adch = ADCH;
 //    adc = ((int)adch << 8) | adcl;
-    adc = analogRead(A2);
+    adc = analogRead(channel)+28;  
     amp = abs(adc - MEAN);
     rms += (long(amp) * amp);
   }
   rms /= numsamples;
   dB = 20.0 * log10(sqrt(rms) / MEAN);
-  return long(dB);
+  
 }
 
 
