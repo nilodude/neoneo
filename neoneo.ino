@@ -1,5 +1,4 @@
 #include <Adafruit_NeoPixel.h>
-#include "adc_freerunner.h"
 
 #ifdef __AVR__
 #include <avr/power.h> // Required for 16 MHz Adafruit Trinket
@@ -11,6 +10,10 @@
 #define IN1 2
 #define IN2 0
 #define IN3 1
+#define OFF1 0
+#define OFF2 20
+#define OFF3 40
+
 #define LED_PIN    6
 #define LED_COUNT 60
 #define MEAN (512)
@@ -19,7 +22,7 @@
 #define cbi(sfr, bit) (_SFR_BYTE(sfr) &= ~_BV(bit))
 #define sbi(sfr, bit) (_SFR_BYTE(sfr) |= _BV(bit))
 
-long adc = 0, amp = 0, rms = 0, audNorm = 0, led = 0;
+long adc = 0, amp = 0, rms = 0, audNorm = 0;
 float dB = 0;
 long audNorm1 = 0;
 long audNorm2 = 0;
@@ -30,7 +33,9 @@ boolean audioMode3 = LOW;
 long aux1 = 0;
 long aux2 = 0;
 long aux3 = 0;
-
+long led1 = 0;
+long led2 = 0;
+long led3 = 0;
 
 float dropFactor = .89;
 
@@ -52,6 +57,7 @@ uint32_t red = strip.Color(255, 0, 0);
 uint32_t green = strip.Color(0, 255, 0);
 
 int analoggRead(uint8_t pin);
+void audioWipe(int value, int offset);
 
 void setup() {
   Serial.begin(9600);
@@ -69,7 +75,7 @@ void loop() {
   audNorm2 = measure(IN2, audioMode2);
   audNorm3 = measure(IN3, audioMode3);
    
-  colorWipe(audNorm1);
+  colorWipe();
   
   audioMode1 = digitalRead(SW1);
   audioMode2 = digitalRead(SW2);
@@ -135,38 +141,56 @@ int analoggRead(uint8_t pin)
     return (high << 8) | low;
 }
 
+void colorWipe() {
+  long value1 = audNorm1 > 40 ? 40 : audNorm1;
+  long value2 = audNorm2 > 40 ? 40 : audNorm2;
+  long value3 = audNorm3 > 40 ? 40 : audNorm3;
+  
+  strip.clear();
 
-
-void colorWipe(long value) {
-  value = value > 40 ? 40 : value;
-  //value = 36;
   if (audioMode1) { // AUDIO MODE
-    strip.clear();
-    if (value <= 20) {
-      for (int i = 1; i <= value; i++)
-        strip.setPixelColor(i - 1, green);
-    } else {
-      if (value > 20) {
-        value = value - 20;
-        for (int i = value; i <= 20; i++)
-          strip.setPixelColor(i - 1, green);
-        for (int i = 1; i <= value; i++)
-          strip.setPixelColor(i - 1, red);
-      }
-      //    strip.setPixelColor(value+1, 0);
-    }
+    audioWipe(value1,OFF1);
   } else { // CONTROL MODE
-    strip.clear();
-    if (value <= 0) {
-      for (int i = 20; i > 20 - 1  - abs(value); i--)
-        strip.setPixelColor(i - 1, red);
-    } else {
-      for (int i = 1; i <= value + 1; i++)
-        strip.setPixelColor(i - 1, green);
-    }
+    controlWipe(value1,OFF1);
+  }
+  if (audioMode2) { // AUDIO MODE
+    audioWipe(value2,OFF2);
+  } else { // CONTROL MODE
+    controlWipe(value2,OFF2);
+  }
+  if (audioMode3) { // AUDIO MODE
+    audioWipe(value3,OFF3);
+  } else { // CONTROL MODE
+    controlWipe(value3,OFF3);
   }
   strip.show();
 }
+
+void audioWipe(int value, int offset){
+    if (value+offset <= 20+offset) {
+      for (int i = 1+offset; i <= value+offset; i++)
+        strip.setPixelColor(i - 1, green);
+    } else {
+      if (value+offset > 20+offset) {
+        value = value - 20;
+        for (int i = value+offset; i <= 20+offset; i++)
+          strip.setPixelColor(i - 1, green);
+        for (int i = 1+offset; i <= value+offset; i++)
+          strip.setPixelColor(i - 1, red);
+      }
+    }
+}
+
+void controlWipe(int value, int offset){
+  if (value+offset <= 0+offset) {
+      for (int i = 20+offset; i > 20 - 1  - abs(value)+offset; i--)
+        strip.setPixelColor(i - 1, red);
+    } else {
+      for (int i = 1+offset; i <= value + 1+offset; i++)
+        strip.setPixelColor(i - 1, green);
+    }
+}
+
 
 long db2led(float db) {
   //0hz -> -3dB, 20kHz -> -13dB
@@ -180,11 +204,11 @@ long db2led(float db) {
     else low = index + 1;
     index = (low + up) / 2;
   }
-  led = lut[index].ledNumber;
-  if (led < aux1)
-    led = aux1 * dropFactor;
+  led1 = lut[index].ledNumber;
+  if (led1 < aux1)
+    led1 = aux1 * dropFactor;
     
-  return led;
+  return led1;
 }
 
 uint32_t greenRedFade(long i) {
@@ -196,7 +220,7 @@ uint32_t greenRedFade(long i) {
 void printValues() {
   Serial.print(adc);
   Serial.print("\t");
-  Serial.print(audioMode1 ? "audio" : "control");
+  Serial.print(audioMode2 ? "audio" : "control");
   Serial.print("\t");
   Serial.print(dB);
   Serial.print("\t");
