@@ -6,6 +6,11 @@
 #endif
 
 #define SW1 2
+#define SW2 4
+#define SW3 3
+#define IN1 2
+#define IN2 0
+#define IN3 1
 #define LED_PIN    6
 #define LED_COUNT 60
 #define MEAN (512)
@@ -14,10 +19,19 @@
 #define cbi(sfr, bit) (_SFR_BYTE(sfr) &= ~_BV(bit))
 #define sbi(sfr, bit) (_SFR_BYTE(sfr) |= _BV(bit))
 
-long adc = 0, amp = 0, rms = 0, audNorm = 0, aux = 0, led = 0;
-long audNorm1 = 0;
-boolean audioMode1 = LOW;
+long adc = 0, amp = 0, rms = 0, audNorm = 0, led = 0;
 float dB = 0;
+long audNorm1 = 0;
+long audNorm2 = 0;
+long audNorm3 = 0;
+boolean audioMode1 = LOW;
+boolean audioMode2 = LOW;
+boolean audioMode3 = LOW;
+long aux1 = 0;
+long aux2 = 0;
+long aux3 = 0;
+
+
 float dropFactor = .89;
 
 struct Map {
@@ -31,21 +45,6 @@ const Map lut[] = {
   { -21, 21}, { -21, 22}, { -20.5, 23}, { -20, 24}, { -19, 25}, { -18, 26},  { -17, 27},  { -16, 28 },  { -15, 29}, { -14, 30},
   { -13, 31}, { -12, 32}, { -11, 33}, { -10, 34}, { -9, 35}, { -8, 36}, { -7, 37},    { -6, 38},  { -5, 39}, { -4, 40}
 };
-struct Input{
-  int channel;
-  long adc=0;
-  long amp=0;
-  long rms=0;
-  long audNorm=0;
-  long aux=0;
-  boolean audioMode = LOW;
-  float dB = 0;  
-};
-Input input1;
-Input input2;
-Input input3;
-
-Input inputs[] = { input1,input2, input3};
 
 Adafruit_NeoPixel strip(LED_COUNT, LED_PIN, NEO_GRB + NEO_KHZ800);
 
@@ -60,27 +59,27 @@ void setup() {
   strip.show();            // Turn OFF all pixels ASAP
   strip.setBrightness(2); // Set BRIGHTNESS to about 1/25.5 (max = 255)
   audioMode1 = digitalRead(SW1);
-  inputs[0].channel = 2;
-  inputs[1].channel = 0;
-  inputs[2].channel = 1; 
-//  ADMUX |= (1 << REFS0);
-//  ADCSRA = 0xe0 + 4;
-//  sbi(ADCSRA, ADPS2);
-//  cbi(ADCSRA, ADPS1);
-//  sbi(ADCSRA, ADPS0);
+  audioMode2 = digitalRead(SW2);
+  audioMode3 = digitalRead(SW3);
 }
 
 void loop() {
   
-  audNorm1 = measure(2, audioMode1);
-  //measure(input2);
-  //measure(input3);
-  
-  
+  audNorm1 = measure(IN1, audioMode1);
+  audNorm2 = measure(IN2, audioMode2);
+  audNorm3 = measure(IN3, audioMode3);
+   
   colorWipe(audNorm1);
-  printValues();
+  
   audioMode1 = digitalRead(SW1);
-  aux = audNorm;
+  audioMode2 = digitalRead(SW2);
+  audioMode3 = digitalRead(SW3); 
+   
+  aux1 = audNorm1;
+  aux2 = audNorm3;
+  aux3 = audNorm3;
+  
+  printValues();
 }
 long measure(int channel, boolean audioMode) {
   rms = 0;
@@ -182,8 +181,8 @@ long db2led(float db) {
     index = (low + up) / 2;
   }
   led = lut[index].ledNumber;
-  if (led < aux)
-    led = aux * dropFactor;
+  if (led < aux1)
+    led = aux1 * dropFactor;
     
   return led;
 }
