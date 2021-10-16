@@ -5,6 +5,7 @@
 #include <avr/power.h> // Required for 16 MHz Adafruit Trinket
 #endif
 
+#define SW 2
 #define LED_PIN    6
 #define LED_COUNT 60
 #define MEAN (1024 / 2)
@@ -40,8 +41,7 @@ void setup() {
   strip.begin();
   strip.show();            // Turn OFF all pixels ASAP
   strip.setBrightness(2); // Set BRIGHTNESS to about 1/25.5 (max = 255)
-  audioMode = digitalRead(A3);
-
+  audioMode = digitalRead(SW);
   ADMUX |= (1 << REFS0);
   ADCSRA = 0xe0 + 4;
   sbi(ADCSRA, ADPS2);
@@ -57,11 +57,11 @@ void loop() {
     audNorm = db2led(dB);
   } else {
     //CONTROL MODE
-    audNorm = (41L * adc / 1024L) - 20;
+    audNorm = -((41L * adc / 1024L) - 20);
   }
   colorWipe(audNorm);
   printValues();
-  audioMode = digitalRead(A3);
+  audioMode = digitalRead(SW);
   aux = audNorm;
 }
 
@@ -69,21 +69,21 @@ long measure(int channel) {
   rms = 0;
   
   for (int i = 0; i < NUM_SAMPLES; i++)  {
-    while (!(ADCSRA & _BV(ADIF))) {
-      if (channel == 2) {
-        ADMUX |= (1 << MUX1);
-      } else if (channel == 0) {
-        ADMUX |= (0 << MUX1);
-      } else if (channel == 1) {
-        ADMUX |= (0 << MUX1) | (1 << MUX0);
-      }
-    }
-    Serial.println(ADMUX);
+    while (!(ADCSRA & _BV(ADIF))) 
+  //  {
+ //     if (channel == 2) {
+  //      ADMUX |= (1 << MUX1);
+  //    } else if (channel == 0) {
+  //      ADMUX |= (0 << MUX1);
+  //    } else if (channel == 1) {
+   //     ADMUX |= (0 << MUX1) | (1 << MUX0);
+  //    }
+    //}
+    //Serial.print(ADMUX);
     sbi(ADCSRA, ADIF);
     byte adcl = ADCL;
     byte adch = ADCH;
     adc = ((int)adch << 8) | adcl;
-
     amp = abs(adc - MEAN);
     rms += (long(amp) * amp);
   }
@@ -152,7 +152,9 @@ uint32_t greenRedFade(long i) {
 void printValues() {
   Serial.print(adc);
   Serial.print("\t");
-  Serial.print(dB);
+  Serial.print(ADCH);
+  Serial.print("\t");
+  Serial.print(audioMode);
   Serial.print("\t");
   Serial.println(audNorm);
 }
