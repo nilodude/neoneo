@@ -1,4 +1,5 @@
 #include <Adafruit_NeoPixel.h>
+#include <AdvancedSerial.h>
 
 #ifdef __AVR__
 #include <avr/power.h> // Required for 16 MHz Adafruit Trinket
@@ -59,6 +60,8 @@ uint32_t green = strip.Color(0, 255, 0);
 int analoggRead(uint8_t pin);
 void audioWipe(int value, int offset);
 
+AdvancedSerial AdvSerial(&Serial, 500);
+
 void setup() {
   Serial.begin(9600);
   strip.begin();
@@ -84,14 +87,13 @@ void loop() {
   aux1 = audNorm1;
   aux2 = audNorm3;
   aux3 = audNorm3;
-  
-  printValues();
 }
+
 long measure(int channel, boolean audioMode,long aux,int led) {
   rms = 0;
   int numsamples = audioMode ? NUM_SAMPLES : 1;
   for (int i = 0; i < numsamples; i++)  {
-    adc = analoggRead(channel)+28;  
+    adc = analoggRead(channel);  
     amp = abs(adc - MEAN);
     rms += (long(amp) * amp);
   }
@@ -103,14 +105,15 @@ long measure(int channel, boolean audioMode,long aux,int led) {
     audNorm = db2led(dB,aux, led);
   } else {
     //CONTROL MODE
-    audNorm = -((41L * adc / 1024L) - 20);
+    audNorm = -((40L * adc / 1024L) - 20);
   }
+  
   return audNorm;  
 }
+
 //LAPUTACLAVE:
 //https://garretlab.web.fc2.com/en/arduino/inside/hardware/arduino/avr/cores/arduino/wiring_analog.c/analogRead.html
-int analoggRead(uint8_t pin)
-{
+int analoggRead(uint8_t pin){
     uint8_t analog_reference = DEFAULT;
     uint8_t low, high;
  
@@ -217,10 +220,9 @@ uint32_t greenRedFade(long i) {
   return strip.Color(r , g , 0);
 }
 
-void printValues() {
-  Serial.print(adc);
-  Serial.print("\t");
-  Serial.print(audioMode2 ? "audio" : "control");
+void printValues(){
+  Serial.print("1");
+  Serial.print(audioMode ? "audio" : "control");
   Serial.print("\t");
   Serial.print(dB);
   Serial.print("\t");
