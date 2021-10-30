@@ -72,9 +72,7 @@ void setup() {
 void loop() {
   
   audNorm1 = measure(IN1, audioMode1,aux1);
-  Serial.print("\t");
   audNorm2 = measure(IN2, audioMode2,aux2);
-  Serial.print("\t");
   audNorm3 = measure(IN3, audioMode3,aux3);
   Serial.println("");
    
@@ -93,7 +91,7 @@ long measure(int channel, boolean audioMode,long aux) {
   adc,amp,rms,dB,audNorm = 0;
   int numsamples = audioMode ? NUM_SAMPLES : 1;
   for (int i = 0; i < numsamples; i++)  {
-    adc = analoggRead(channel)-2;  
+    adc = 1024-analoggRead(channel)+1;  
     amp = abs(adc - MEAN);
     rms += (long(amp) * amp);
   }
@@ -105,18 +103,18 @@ long measure(int channel, boolean audioMode,long aux) {
     audNorm = db2led(dB,aux);
   } else {
     //CONTROL MODE
-    audNorm = -((40L * adc / 1024L) - 20);
+    audNorm = (40L * adc / 1024L) - 20;
   }
 
   switch(channel){
     case 16:
-      Serial.print("| IN1");
+      Serial.print("|INPUT1");
       break;
     case 14:
-      Serial.print("| IN2");
+      Serial.print("\t|INPUT2");
       break;
     case 15:
-      Serial.print("| IN3");
+      Serial.print("\t|INPUT3");
       break;
     default:
       Serial.print("");
@@ -126,11 +124,11 @@ long measure(int channel, boolean audioMode,long aux) {
   Serial.print(audioMode ? "audio" : "control");
   Serial.print(" ");
   Serial.print(adc);
-  Serial.print(" ");
+  Serial.print("\t");
   //Serial.print(dB);
   //Serial.print(" ");
   Serial.print(audNorm);
-  
+
   return audNorm;  
 }
 
