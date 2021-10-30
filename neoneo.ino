@@ -76,7 +76,7 @@ void loop() {
   audNorm2 = measure(IN2, audioMode2,aux2, led2);
   Serial.print("\t");
   audNorm3 = measure(IN3, audioMode3,aux3, led3);
-  Serial.println("\t");
+  Serial.println("");
    
   colorWipe();
   
@@ -93,7 +93,7 @@ long measure(int channel, boolean audioMode,long aux,int led) {
   rms = 0;
   int numsamples = audioMode ? NUM_SAMPLES : 1;
   for (int i = 0; i < numsamples; i++)  {
-    adc = 1023 - (analoggRead(channel)-2);  
+    adc = analoggRead(channel);  
     amp = abs(adc - MEAN);
     rms += (long(amp) * amp);
   }
@@ -105,7 +105,7 @@ long measure(int channel, boolean audioMode,long aux,int led) {
     audNorm = db2led(dB,aux, led);
   } else {
     //CONTROL MODE
-    audNorm = (40L * adc / 1024L) - 20;
+    audNorm = -((40L * adc / 1024L) - 20);
   }
 
   Serial.print(channel);
@@ -195,7 +195,7 @@ void audioWipe(int value, int offset){
 }
 
 void controlWipe(int value, int offset){
-  if (value+offset <= 0+offset) {
+  if (value+offset < 0+offset) {
       for (int i = 20+offset; i > 20 - 1  - abs(value)+offset; i--)
         strip.setPixelColor(i - 1, red);
     } else {
