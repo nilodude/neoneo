@@ -71,11 +71,11 @@ void setup() {
 
 void loop() {
   
-  audNorm1 = measure(IN1, audioMode1,aux1, led1);
+  audNorm1 = measure(IN1, audioMode1,aux1);
   Serial.print("\t");
-  audNorm2 = measure(IN2, audioMode2,aux2, led2);
+  audNorm2 = measure(IN2, audioMode2,aux2);
   Serial.print("\t");
-  audNorm3 = measure(IN3, audioMode3,aux3, led3);
+  audNorm3 = measure(IN3, audioMode3,aux3);
   Serial.println("");
    
   colorWipe();
@@ -89,11 +89,11 @@ void loop() {
   aux3 = audNorm3;
 }
 
-long measure(int channel, boolean audioMode,long aux,int led) {
-  rms = 0;
+long measure(int channel, boolean audioMode,long aux) {
+  adc,amp,rms,dB,audNorm = 0;
   int numsamples = audioMode ? NUM_SAMPLES : 1;
   for (int i = 0; i < numsamples; i++)  {
-    adc = analoggRead(channel);  
+    adc = analoggRead(channel)-2;  
     amp = abs(adc - MEAN);
     rms += (long(amp) * amp);
   }
@@ -102,20 +102,33 @@ long measure(int channel, boolean audioMode,long aux,int led) {
 
   if (audioMode) {
     //AUDIO MODE
-    audNorm = db2led(dB,aux, led);
+    audNorm = db2led(dB,aux);
   } else {
     //CONTROL MODE
     audNorm = -((40L * adc / 1024L) - 20);
   }
 
-  Serial.print(channel);
-  Serial.print("\t");
+  switch(channel){
+    case 16:
+      Serial.print("| IN1");
+      break;
+    case 14:
+      Serial.print("| IN2");
+      break;
+    case 15:
+      Serial.print("| IN3");
+      break;
+    default:
+      Serial.print("");
+  }
+  
+  Serial.print(" ");
   Serial.print(audioMode ? "audio" : "control");
-  Serial.print("\t");
+  Serial.print(" ");
   Serial.print(adc);
-  Serial.print("\t");
-  Serial.print(dB);
-  Serial.print("\t");
+  Serial.print(" ");
+  //Serial.print(dB);
+  //Serial.print(" ");
   Serial.print(audNorm);
   
   return audNorm;  
@@ -196,7 +209,7 @@ void audioWipe(int value, int offset){
 
 void controlWipe(int value, int offset){
   if (value+offset < 0+offset) {
-      for (int i = 20+offset; i > 20 - 1  - abs(value)+offset; i--)
+      for (int i = 20+offset; i > 20 - abs(value)+offset; i--)
         strip.setPixelColor(i - 1, red);
     } else {
       for (int i = 1+offset; i <= value + 1+offset; i++)
@@ -205,13 +218,13 @@ void controlWipe(int value, int offset){
 }
 
 
-long db2led(float db, long aux, int led) {
+long db2led(float db, long aux) {
   //0hz -> -3dB, 20kHz -> -13dB
   //min= -34.1dB ; max= -2.59
   int low = 0;
   int up = sizeof(lut) / sizeof(Map) - 1;
   int index = (low + up) / 2;
-
+  int led = 0;
   while ((round(lut[index].dbValue) != round(db)) && (low <= up)) {
     if (lut[index].dbValue > dB) up = index - 1;
     else low = index + 1;
