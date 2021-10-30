@@ -91,7 +91,7 @@ long measure(int channel, boolean audioMode,long aux) {
   adc,amp,rms,dB,audNorm = 0;
   int numsamples = audioMode ? NUM_SAMPLES : 1;
   for (int i = 0; i < numsamples; i++)  {
-    adc = 1024-analoggRead(channel)+1;  
+    adc = 1024-analoggRead(channel)+2;  
     amp = abs(adc - MEAN);
     rms += (long(amp) * amp);
   }
