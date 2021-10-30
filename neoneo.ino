@@ -1,5 +1,4 @@
 #include <Adafruit_NeoPixel.h>
-#include <AdvancedSerial.h>
 
 #ifdef __AVR__
 #include <avr/power.h> // Required for 16 MHz Adafruit Trinket
@@ -60,8 +59,6 @@ uint32_t green = strip.Color(0, 255, 0);
 int analoggRead(uint8_t pin);
 void audioWipe(int value, int offset);
 
-AdvancedSerial AdvSerial(&Serial, 500);
-
 void setup() {
   Serial.begin(9600);
   strip.begin();
@@ -75,8 +72,11 @@ void setup() {
 void loop() {
   
   audNorm1 = measure(IN1, audioMode1,aux1, led1);
+  Serial.print("\t");
   audNorm2 = measure(IN2, audioMode2,aux2, led2);
+  Serial.print("\t");
   audNorm3 = measure(IN3, audioMode3,aux3, led3);
+  Serial.println("\t");
    
   colorWipe();
   
@@ -93,7 +93,7 @@ long measure(int channel, boolean audioMode,long aux,int led) {
   rms = 0;
   int numsamples = audioMode ? NUM_SAMPLES : 1;
   for (int i = 0; i < numsamples; i++)  {
-    adc = analoggRead(channel);  
+    adc = 1023 - (analoggRead(channel)-2);  
     amp = abs(adc - MEAN);
     rms += (long(amp) * amp);
   }
@@ -105,8 +105,18 @@ long measure(int channel, boolean audioMode,long aux,int led) {
     audNorm = db2led(dB,aux, led);
   } else {
     //CONTROL MODE
-    audNorm = -((40L * adc / 1024L) - 20);
+    audNorm = (40L * adc / 1024L) - 20;
   }
+
+  Serial.print(channel);
+  Serial.print("\t");
+  Serial.print(audioMode ? "audio" : "control");
+  Serial.print("\t");
+  Serial.print(adc);
+  Serial.print("\t");
+  Serial.print(dB);
+  Serial.print("\t");
+  Serial.print(audNorm);
   
   return audNorm;  
 }
@@ -218,13 +228,4 @@ uint32_t greenRedFade(long i) {
   int r = min(255, 40 + i * 25);
   int g = max(0, 240 - i * 15);
   return strip.Color(r , g , 0);
-}
-
-void printValues(){
-  Serial.print("1");
-  Serial.print(audioMode ? "audio" : "control");
-  Serial.print("\t");
-  Serial.print(dB);
-  Serial.print("\t");
-  Serial.println(audNorm);
 }
