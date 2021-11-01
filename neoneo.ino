@@ -22,7 +22,6 @@
 #define cbi(sfr, bit) (_SFR_BYTE(sfr) &= ~_BV(bit))
 #define sbi(sfr, bit) (_SFR_BYTE(sfr) |= _BV(bit))
 
-
 long audNorm1 = 0;
 long audNorm2 = 0;
 long audNorm3 = 0;
@@ -55,43 +54,40 @@ Adafruit_NeoPixel strip(LED_COUNT, LED_PIN, NEO_GRB + NEO_KHZ800);
 uint32_t red = strip.Color(255, 0, 0);
 uint32_t green = strip.Color(0, 255, 0);
 
-int analoggRead(uint8_t pin);
-void audioWipe(int value, int offset);
-
 void setup() {
   Serial.begin(9600);
   strip.begin();
-  strip.show();            // Turn OFF all pixels ASAP
-  strip.setBrightness(2); // Set BRIGHTNESS to about 1/25.5 (max = 255)
+  strip.show();
+  strip.setBrightness(2);
   audioMode1 = digitalRead(SW1);
   audioMode2 = digitalRead(SW2);
   audioMode3 = digitalRead(SW3);
 }
 
 void loop() {
-  audNorm1, audNorm2, audNorm3 = 0;
-  audNorm1 = measure(IN1, audioMode1,aux1);
-  audNorm2 = measure(IN2, audioMode2,aux2);
-  audNorm3 = measure(IN3, audioMode3,aux3);
+  audNorm1 = measure(IN1, audioMode1, aux1);
+  audNorm2 = measure(IN2, audioMode2, aux2);
+  audNorm3 = measure(IN3, audioMode3, aux3);
+
   Serial.println("");
-   
+
   colorWipe();
-  
+
   audioMode1 = digitalRead(SW1);
   audioMode2 = digitalRead(SW2);
-  audioMode3 = digitalRead(SW3); 
-   
+  audioMode3 = digitalRead(SW3);
+
   aux1 = audNorm1;
-  aux2 = audNorm3;
+  aux2 = audNorm2;
   aux3 = audNorm3;
 }
 
-long measure(int channel, boolean audioMode,long aux) {
+long measure(int channel, boolean audioMode, long aux) {
   long adc = 0, amp = 0, rms = 0, audNorm = 0;
   float dB = 0;
   int numsamples = audioMode ? NUM_SAMPLES : 1;
   for (int i = 0; i < numsamples; i++)  {
-    adc = 1022-analoggRead(channel)+2;  
+    adc = 1022 - analoggRead(channel) + 2;
     amp = abs(adc - MEAN);
     rms += (long(amp) * amp);
   }
@@ -100,125 +96,86 @@ long measure(int channel, boolean audioMode,long aux) {
 
   if (audioMode) {
     //AUDIO MODE
-    audNorm = db2led(dB,aux);
+    audNorm = db2led(dB, aux);
   } else {
     //CONTROL MODE
     audNorm = (40L * adc / 1024L) - 20;
   }
 
-  switch(channel){
-    case 16:
-      Serial.print("|INPUT1");
-      break;
-    case 14:
-      Serial.print("\t|INPUT2");
-      break;
-    case 15:
-      Serial.print("\t|INPUT3");
-      break;
-    default:
-      Serial.print("");
-  }
-  
-  Serial.print(" ");
-  Serial.print(audioMode ? "aud" : "ctl");
-  Serial.print("\t");
-  Serial.print(adc);
-  Serial.print("\t");
-  //Serial.print(dB);
-  //Serial.print(" ");
-  Serial.print(audNorm);
+  printValues(channel, audioMode, adc, dB, audNorm);
 
-  return audNorm;  
+  return audNorm;
 }
 
-//LAPUTACLAVE:
-//https://garretlab.web.fc2.com/en/arduino/inside/hardware/arduino/avr/cores/arduino/wiring_analog.c/analogRead.html
-int analoggRead(uint8_t pin){
-    uint8_t analog_reference = DEFAULT;
-    uint8_t low, high;
- 
-    if (pin >= 14) pin -= 14; // allow for channel or pin numbers
- 
-    // set the analog reference (high two bits of ADMUX) and select the
-    // channel (low 4 bits).  this also sets ADLAR (left-adjust result)
-    // to 0 (the default).
-    ADMUX = (analog_reference << 6) | (pin & 0x07);
- 
-    // without a delay, we seem to read from the wrong channel
-    //delay(1);
- 
-    // start the conversion
-    sbi(ADCSRA, ADSC);
- 
-    // ADSC is cleared when the conversion finishes
-    while (bit_is_set(ADCSRA, ADSC));
- 
-    // we have to read ADCL first; doing so locks both ADCL
-    // and ADCH until ADCH is read.  reading ADCL second would
-    // cause the results of each conversion to be discarded,
-    // as ADCL and ADCH would be locked when it completed.
-    low  = ADCL;
-    high = ADCH;
- 
-    // combine the two bytes
-    return (high << 8) | low;
+int analoggRead(uint8_t pin) {
+  uint8_t analog_reference = DEFAULT;
+  uint8_t low, high;
+
+  if (pin >= 14) pin -= 14;
+
+  ADMUX = (analog_reference << 6) | (pin & 0x07);
+
+  sbi(ADCSRA, ADSC);
+
+  while (bit_is_set(ADCSRA, ADSC));
+
+  low  = ADCL;
+  high = ADCH;
+
+  return (high << 8) | low;
 }
 
 void colorWipe() {
   long value1 = audNorm1 > 40 ? 40 : audNorm1;
   long value2 = audNorm2 > 40 ? 40 : audNorm2;
   long value3 = audNorm3 > 40 ? 40 : audNorm3;
-  
+
   strip.clear();
 
   if (audioMode1) { // AUDIO MODE
-    audioWipe(value1,OFF1);
+    audioWipe(value1, OFF1);
   } else { // CONTROL MODE
-    controlWipe(value1,OFF1);
+    controlWipe(value1, OFF1);
   }
   if (audioMode2) { // AUDIO MODE
-    audioWipe(value2,OFF2);
+    audioWipe(value2, OFF2);
   } else { // CONTROL MODE
-    controlWipe(value2,OFF2);
+    controlWipe(value2, OFF2);
   }
   if (audioMode3) { // AUDIO MODE
-    audioWipe(value3,OFF3);
+    audioWipe(value3, OFF3);
   } else { // CONTROL MODE
-    controlWipe(value3,OFF3);
+    controlWipe(value3, OFF3);
   }
   strip.show();
 }
 
-void audioWipe(int value, int offset){
-    if (value+offset <= 20+offset) {
-      for (int i = 1+offset; i <= value+offset; i++)
+void audioWipe(int value, int offset) {
+  if (value + offset <= 20 + offset) {
+    for (int i = 1 + offset; i <= value + offset; i++)
+      strip.setPixelColor(i - 1, green);
+  } else {
+    if (value + offset > 20 + offset) {
+      value = value - 20;
+      for (int i = value + offset; i <= 20 + offset; i++)
         strip.setPixelColor(i - 1, green);
-    } else {
-      if (value+offset > 20+offset) {
-        value = value - 20;
-        for (int i = value+offset; i <= 20+offset; i++)
-          strip.setPixelColor(i - 1, green);
-        for (int i = 1+offset; i <= value+offset; i++)
-          strip.setPixelColor(i - 1, red);
-      }
+      for (int i = 1 + offset; i <= value + offset; i++)
+        strip.setPixelColor(i - 1, greenRedFade(i - offset));
     }
+  }
 }
 
-void controlWipe(int value, int offset){
-  if (value+offset < 0+offset) {
-      for (int i = 20+offset; i > 20 - abs(value)+offset; i--)
-        strip.setPixelColor(i - 1, red);
-    } else {
-      for (int i = 1+offset; i <= value + 1+offset; i++)
-        strip.setPixelColor(i - 1, green);
-    }
+void controlWipe(int value, int offset) {
+  if (value + offset < 0 + offset) {
+    for (int i = 20 + offset; i > 20 - abs(value) + offset; i--)
+      strip.setPixelColor(i - 1, red);
+  } else {
+    for (int i = 1 + offset; i <= value + 1 + offset; i++)
+      strip.setPixelColor(i - 1, green);
+  }
 }
-
 
 long db2led(float db, long aux) {
-  //0hz -> -3dB, 20kHz -> -13dB
-  //min= -34.1dB ; max= -2.59
   int low = 0;
   int up = sizeof(lut) / sizeof(Map) - 1;
   int index = (low + up) / 2;
@@ -231,12 +188,39 @@ long db2led(float db, long aux) {
   led = lut[index].ledNumber;
   if (led < aux)
     led = aux * dropFactor;
-    
+
   return led;
 }
 
 uint32_t greenRedFade(long i) {
-  int r = min(255, 40 + i * 25);
-  int g = max(0, 240 - i * 15);
+  int r = min(255, 40 + i * 35);
+  int g = max(0, 240 - i * 25);
   return strip.Color(r , g , 0);
+}
+
+void printValues(int channel, boolean audioMode, long adc, float dB, long audNorm) {
+  switch (channel) {
+    case 16:
+      Serial.print("|INPUT1");
+      break;
+    case 14:
+      Serial.print("\t|INPUT2");
+      break;
+    case 15:
+      Serial.print("\t|INPUT3");
+      break;
+    default:
+      Serial.print("");
+  }
+
+  Serial.print(" ");
+  Serial.print(audioMode ? "aud" : "ctl");
+  Serial.print("\t");
+  Serial.print(adc);
+  Serial.print("\t");
+  //  Serial.print(rms);
+  //  Serial.print("\t");
+  //  Serial.print(dB);
+  //  Serial.print(" ");
+  Serial.print(audNorm);
 }
