@@ -22,8 +22,7 @@
 #define cbi(sfr, bit) (_SFR_BYTE(sfr) &= ~_BV(bit))
 #define sbi(sfr, bit) (_SFR_BYTE(sfr) |= _BV(bit))
 
-long adc = 0, amp = 0, rms = 0, audNorm = 0;
-float dB = 0;
+
 long audNorm1 = 0;
 long audNorm2 = 0;
 long audNorm3 = 0;
@@ -70,7 +69,7 @@ void setup() {
 }
 
 void loop() {
-  
+  audNorm1, audNorm2, audNorm3 = 0;
   audNorm1 = measure(IN1, audioMode1,aux1);
   audNorm2 = measure(IN2, audioMode2,aux2);
   audNorm3 = measure(IN3, audioMode3,aux3);
@@ -88,10 +87,11 @@ void loop() {
 }
 
 long measure(int channel, boolean audioMode,long aux) {
-  adc,amp,rms,dB,audNorm = 0;
+  long adc = 0, amp = 0, rms = 0, audNorm = 0;
+  float dB = 0;
   int numsamples = audioMode ? NUM_SAMPLES : 1;
   for (int i = 0; i < numsamples; i++)  {
-    adc = 1023-analoggRead(channel)+2;  
+    adc = 1022-analoggRead(channel)+2;  
     amp = abs(adc - MEAN);
     rms += (long(amp) * amp);
   }
@@ -224,7 +224,7 @@ long db2led(float db, long aux) {
   int index = (low + up) / 2;
   int led = 0;
   while ((round(lut[index].dbValue) != round(db)) && (low <= up)) {
-    if (lut[index].dbValue > dB) up = index - 1;
+    if (lut[index].dbValue > db) up = index - 1;
     else low = index + 1;
     index = (low + up) / 2;
   }
