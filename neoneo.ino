@@ -91,7 +91,7 @@ long measure(int channel, boolean audioMode,long aux) {
   adc,amp,rms,dB,audNorm = 0;
   int numsamples = audioMode ? NUM_SAMPLES : 1;
   for (int i = 0; i < numsamples; i++)  {
-    adc = 1024-analoggRead(channel)+2;  
+    adc = 1023-analoggRead(channel)+2;  
     amp = abs(adc - MEAN);
     rms += (long(amp) * amp);
   }
@@ -121,8 +121,8 @@ long measure(int channel, boolean audioMode,long aux) {
   }
   
   Serial.print(" ");
-  Serial.print(audioMode ? "audio" : "control");
-  Serial.print(" ");
+  Serial.print(audioMode ? "aud" : "ctl");
+  Serial.print("\t");
   Serial.print(adc);
   Serial.print("\t");
   //Serial.print(dB);
