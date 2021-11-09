@@ -153,18 +153,8 @@ void colorWipe() {
 }
 
 void audioWipe(int value, int offset) {
-  if (value + offset <= 20 + offset) {
-    for (int i = 1 + offset; i <= value + offset; i++)
-      strip.setPixelColor(i - 1, greenRedFade(i - offset));
-  } else {
-    if (value + offset > 20 + offset) {
-      value = value - 20;
-      for (int i = value + offset; i <= 20 + offset; i++)
-        strip.setPixelColor(i - 1, green);
-      for (int i = 1 + offset; i <= value + offset; i++)
-        strip.setPixelColor(i - 1, greenRedFade(i - offset));
-    }
-  }
+  for (int i = 1 + offset; i <= value + offset; i++)
+    strip.setPixelColor(i - 1, greenRedFade(i - offset));
 }
 
 void controlWipe(int value, int offset) {
@@ -195,9 +185,9 @@ long db2led(float db, long aux) {
 }
 
 uint32_t greenRedFade(long i) {
-  int r = min(255, i*10);
+  int r = min(255, i * 10);
   int g = max(0, 90);
-  return i > 15 ? i==20 ? red: strip.Color(r ,g , 0) : green;
+  return i > 15 ? i == 20 ? red : strip.Color(r , g , 0) : green;
 }
 
 void printValues(int channel, boolean audioMode, long adc, float dB, long audNorm) {
@@ -222,7 +212,7 @@ void printValues(int channel, boolean audioMode, long adc, float dB, long audNor
   Serial.print("\t");
   //  Serial.print(rms);
   //  Serial.print("\t");
-    Serial.print(dB);
-    Serial.print(" ");
+  Serial.print(dB);
+  Serial.print(" ");
   Serial.print(audNorm);
 }
