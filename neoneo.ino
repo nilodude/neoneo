@@ -104,7 +104,7 @@ long measure(int channel, boolean audioMode, long aux) {
 
   printValues(channel, audioMode, adc, dB, audNorm);
 
-  return audNorm;
+  return audNorm > 40 ? 40 : audNorm;
 }
 
 int analoggRead(uint8_t pin) {
@@ -126,26 +126,22 @@ int analoggRead(uint8_t pin) {
 }
 
 void colorWipe() {
-  long value1 = audNorm1 > 40 ? 40 : audNorm1;
-  long value2 = audNorm2 > 40 ? 40 : audNorm2;
-  long value3 = audNorm3 > 40 ? 40 : audNorm3;
-
   strip.clear();
 
   if (audioMode1) { // AUDIO MODE
-    audioWipe(value1, OFF1);
+    audioWipe(audNorm1, OFF1);
   } else { // CONTROL MODE
-    controlWipe(value1, OFF1);
+    controlWipe(audNorm1, OFF1);
   }
   if (audioMode2) { // AUDIO MODE
-    audioWipe(value2, OFF2);
+    audioWipe(audNorm2, OFF2);
   } else { // CONTROL MODE
-    controlWipe(value2, OFF2);
+    controlWipe(audNorm2, OFF2);
   }
   if (audioMode3) { // AUDIO MODE
-    audioWipe(value3, OFF3);
+    audioWipe(audNorm3, OFF3);
   } else { // CONTROL MODE
-    controlWipe(value3, OFF3);
+    controlWipe(audNorm3, OFF3);
   }
   strip.show();
 }
