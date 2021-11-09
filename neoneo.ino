@@ -48,10 +48,10 @@ const Map lut2[] = {
   { -21, 21}, { -21, 22}, { -20.5, 23}, { -20, 24}, { -19, 25}, { -18, 26},  { -17, 27},  { -16, 28 },  { -15, 29}, { -14, 30},
   { -13, 31}, { -12, 32}, { -11, 33}, { -10, 34}, { -9, 35}, { -8, 36}, { -7, 37},    { -6, 38},  { -5, 39}, { -4, 40}
 };
-
+//con el oscilador a pelo deberia encenderse hasta el led 9
 const Map lut[] = {
-  { -30.5, 1},  { -30, 2},  { -30, 3},  { -29, 4},  { -29, 5}, { -29, 6},    { -28, 7 },    { -28, 8 },   { -26, 9},  { -24, 10},
-  { -22, 11}, { -20, 12}, { -18, 13}, { -16, 14},  { -14, 15},  { -12, 16},   { -10, 17}, { -8, 18},  { -6, 19},  { -4, 20}
+  { -30.5, 1},  { -30, 2},  { -30, 3},  { -26, 4},  { -22, 5}, { -20, 6},    { -18, 7 },    { -16, 8 },   { -14, 9},  { -12, 10},
+  { -10, 11}, { -8, 12}, { -7, 13}, { -6, 14},  { -5, 15},  { -4, 16},   { -3, 17}, { -2, 18},  { -1, 19},  { -0, 20}
 };
 
 
@@ -155,7 +155,7 @@ void colorWipe() {
 void audioWipe(int value, int offset) {
   if (value + offset <= 20 + offset) {
     for (int i = 1 + offset; i <= value + offset; i++)
-      strip.setPixelColor(i - 1, green);
+      strip.setPixelColor(i - 1, greenRedFade(i - offset));
   } else {
     if (value + offset > 20 + offset) {
       value = value - 20;
@@ -195,9 +195,9 @@ long db2led(float db, long aux) {
 }
 
 uint32_t greenRedFade(long i) {
-  int r = min(255, 40 + i * 35);
-  int g = max(0, 240 - i * 25);
-  return strip.Color(r , g , 0);
+  int r = min(255, i*10);
+  int g = max(0, 90);
+  return i > 15 ? i==20 ? red: strip.Color(r ,g , 0) : green;
 }
 
 void printValues(int channel, boolean audioMode, long adc, float dB, long audNorm) {
@@ -222,7 +222,7 @@ void printValues(int channel, boolean audioMode, long adc, float dB, long audNor
   Serial.print("\t");
   //  Serial.print(rms);
   //  Serial.print("\t");
-  //  Serial.print(dB);
-  //  Serial.print(" ");
+    Serial.print(dB);
+    Serial.print(" ");
   Serial.print(audNorm);
 }
