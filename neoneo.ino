@@ -99,7 +99,7 @@ long measure(int channel, boolean audioMode, long aux) {
     audNorm = db2led(dB, aux);
   } else {
     //CONTROL MODE
-    audNorm = (40L * adc / 1024L) - 20;
+    audNorm = (41L * adc / 1024L) - 20;
   }
 
   printValues(channel, audioMode, adc, dB, audNorm);
