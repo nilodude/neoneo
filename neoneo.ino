@@ -34,6 +34,7 @@ long aux3 = 0;
 long led1 = 0;
 long led2 = 0;
 long led3 = 0;
+boolean startup = HIGH;
 
 float dropFactor = .89;
 
@@ -42,10 +43,10 @@ struct Map {
   long ledNumber;
 };
 
-//con el oscilador a pelo deberia encenderse hasta el led 9
+//con el oscilador a pelo deberia encenderse hasta el led 15, con A = oscilador, B=2, C=0 --> A*B+C debe encender todo (oscilador *2)
 const Map lut[] = {
-  { -30.5, 1},  { -30, 2},  { -30, 3},  { -26, 4},  { -22, 5}, { -21, 6},    { -20, 7 },    { -19, 8 },   { -18, 9},  { -17, 10},
-  { -16, 11}, { -15, 12}, { -14, 13}, { -12, 14},  { -10, 15},  { -8, 16},   { -6, 17}, { -4, 18},  { -2, 19},  { -0, 20}
+  { -30.5, 1},  { -30, 2},  { -30, 3},  { -26, 4},  { -25, 5}, { -24, 6},    { -23, 7 },    { -22, 8 },   { -21, 9},  { -20, 10},
+  { -19, 11}, { -18, 12}, { -16, 13}, { -14, 14},  { -12, 15},  { -11, 16},   { -10, 17}, { -8, 18},  { -6, 19},  { -3, 20}
 };
 
 
@@ -53,6 +54,8 @@ Adafruit_NeoPixel strip(LED_COUNT, LED_PIN, NEO_GRB + NEO_KHZ800);
 
 uint32_t red = strip.Color(255, 0, 0);
 uint32_t green = strip.Color(0, 255, 0);
+uint32_t blue = strip.Color(0, 0, 255);
+uint32_t snakeColor = strip.Color(255, 30, 255);
 
 void setup() {
   Serial.begin(9600);
@@ -65,6 +68,10 @@ void setup() {
 }
 
 void loop() {
+
+  if(startup){
+    startUpAnimation();
+  }
   audNorm1 = measure(IN1, audioMode1, aux1);
   audNorm2 = measure(IN2, audioMode2, aux2);
   audNorm3 = measure(IN3, audioMode3, aux3);
@@ -210,3 +217,53 @@ void printValues(int channel, boolean audioMode, long adc, float dB, long audNor
   Serial.print(" ");
   Serial.print(audNorm);
 }
+
+void startUpAnimation(){
+   //rainbow(1);
+   snake(70);
+}
+
+void snake(int wait){
+  strip.clear();
+  int tail = 5;
+  for(int i=50;i<55;i++){
+    strip.clear();
+    for(int j=i;j<i+tail;j++){
+      strip.setPixelColor(j,snakeColor);
+    }
+    strip.show();
+    delay(wait);
+  }
+  
+  for(int i=26;i>20;i--){
+    strip.clear();
+    for(int j=i;j<i+tail;j++){
+      strip.setPixelColor(j,snakeColor);
+    }
+    strip.show();
+    delay(wait);
+  }
+  for(int i=11;i<16;i++){
+    strip.clear();
+    for(int j=i;j<i+tail;j++){
+      strip.setPixelColor(j,snakeColor);
+    }
+    strip.show();
+    delay(wait);
+  }
+  startup=LOW;
+}
+
+void rainbow(int wait) {
+  for(long firstPixelHue = 0; firstPixelHue < 5*65536; firstPixelHue += 256) {
+    for(int i=0; i<strip.numPixels(); i++) { // For each pixel in strip...
+      int pixelHue = firstPixelHue + (i * 65536L / strip.numPixels());
+       strip.setPixelColor(i, strip.gamma32(strip.ColorHSV(pixelHue)));
+    }
+    strip.show(); // Update strip with new contents
+    delay(wait);  // Pause for a moment
+    startup=LOW;
+    strip.clear();
+  }
+}
+  
