@@ -1,2 +1,7 @@
 30/10/21:
 	-read serial plotter missing manual. (bookmarks: ardu)
+	
+
+13/02/22:
+	-in order not to fuckup the code, keep audioMode as boolean 
+	and add a sign variable for each switch

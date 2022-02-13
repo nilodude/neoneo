@@ -4,9 +4,9 @@
 #include <avr/power.h> // Required for 16 MHz Adafruit Trinket
 #endif
 
-#define SW1 2
-#define SW2 4
-#define SW3 3
+#define SW1 A5
+#define SW2 A3
+#define SW3 A4
 #define IN1 A2
 #define IN2 A0
 #define IN3 A1
@@ -25,15 +25,21 @@
 long audNorm1 = 0;
 long audNorm2 = 0;
 long audNorm3 = 0;
+
 boolean audioMode1 = LOW;
+boolean controlSign1 = LOW;
 boolean audioMode2 = LOW;
+boolean controlSign2 = LOW;
 boolean audioMode3 = LOW;
+boolean controlSign3 = LOW;
+
 long aux1 = 0;
 long aux2 = 0;
 long aux3 = 0;
 long led1 = 0;
 long led2 = 0;
 long led3 = 0;
+
 boolean startup = HIGH;
 
 float dropFactor = .89;
@@ -49,7 +55,6 @@ const Map lut[] = {
   { -19, 11}, { -18, 12}, { -16, 13}, { -14, 14},  { -12, 15},  { -11, 16},   { -10, 17}, { -8, 18},  { -6, 19},  { -3, 20}
 };
 
-
 Adafruit_NeoPixel strip(LED_COUNT, LED_PIN, NEO_GRB + NEO_KHZ800);
 
 uint32_t red = strip.Color(255, 0, 0);
@@ -62,9 +67,8 @@ void setup() {
   strip.begin();
   strip.show();
   strip.setBrightness(2);
-  audioMode1 = digitalRead(SW1);
-  audioMode2 = digitalRead(SW2);
-  audioMode3 = digitalRead(SW3);
+  
+  measureMode();
 }
 
 void loop() {
@@ -72,24 +76,55 @@ void loop() {
   if(startup){
     startUpAnimation();
   }
-  audNorm1 = measure(IN1, audioMode1, aux1);
-  audNorm2 = measure(IN2, audioMode2, aux2);
-  audNorm3 = measure(IN3, audioMode3, aux3);
+  audNorm1 = measureSignal(IN1, audioMode1, aux1, controlSign1);
+  audNorm2 = measureSignal(IN2, audioMode2, aux2,controlSign2);
+  audNorm3 = measureSignal(IN3, audioMode3, aux3,controlSign3);
 
   Serial.println("");
 
   colorWipe();
 
-  audioMode1 = digitalRead(SW1);
-  audioMode2 = digitalRead(SW2);
-  audioMode3 = digitalRead(SW3);
+  measureMode();
 
   aux1 = audNorm1;
   aux2 = audNorm2;
   aux3 = audNorm3;
 }
 
-long measure(int channel, boolean audioMode, long aux) {
+void measureMode(){
+  long raw1 = analoggRead(SW1);
+  audioMode1 = raw1 > 513;
+  controlSign1 = raw1 > 1;
+
+  long raw2 = analoggRead(SW2);
+  audioMode2 = raw2 > 513;
+  controlSign2 = raw2 > 1;
+
+  long raw3 = analoggRead(SW3);
+  audioMode3 = raw3 > 513;
+  controlSign3 = raw3 > 1;
+
+//  Serial.print(raw1);
+//  Serial.print("\t");
+//  Serial.print(audioMode1);
+//  Serial.print("\t");
+//  Serial.print(controlSign1);
+//  Serial.print("|");
+//  Serial.print(raw2);
+//  Serial.print("\t");
+//  Serial.print(audioMode2);
+//  Serial.print("\t");
+//  Serial.print(controlSign2);
+//  Serial.print("|");
+//  Serial.print(raw3);
+//  Serial.print("\t");
+//  Serial.print(audioMode3);
+//  Serial.print("\t");
+//  Serial.print(controlSign3);
+}
+
+
+long measureSignal(int channel, boolean audioMode, long aux, boolean controlSign) {
   long adc = 0, amp = 0, rms = 0, audNorm = 0;
   float dB = 0;
   int numsamples = audioMode ? NUM_SAMPLES : 1;
@@ -109,7 +144,7 @@ long measure(int channel, boolean audioMode, long aux) {
     audNorm = (41L * adc / 1024L) - 20;
   }
 
-  printValues(channel, audioMode, adc, dB, audNorm);
+  printValues(channel, audioMode,controlSign, adc, dB, audNorm);
 
   return audNorm > 40 ? 40 : audNorm;
 }
@@ -138,17 +173,17 @@ void colorWipe() {
   if (audioMode1) { // AUDIO MODE
     audioWipe(audNorm1, OFF1);
   } else { // CONTROL MODE
-    controlWipe(audNorm1, OFF1);
+    controlWipe(audNorm1, OFF1,controlSign1);
   }
   if (audioMode2) { // AUDIO MODE
     audioWipe(audNorm2, OFF2);
   } else { // CONTROL MODE
-    controlWipe(audNorm2, OFF2);
+    controlWipe(audNorm2, OFF2,controlSign2);
   }
   if (audioMode3) { // AUDIO MODE
     audioWipe(audNorm3, OFF3);
   } else { // CONTROL MODE
-    controlWipe(audNorm3, OFF3);
+    controlWipe(audNorm3, OFF3,controlSign3);
   }
   strip.show();
 }
@@ -158,7 +193,7 @@ void audioWipe(int value, int offset) {
     strip.setPixelColor(i - 1, greenRedFade(i - offset));
 }
 
-void controlWipe(int value, int offset) {
+void controlWipe(int value, int offset, boolean controlSign) {
   if (value + offset < 0 + offset) {
     for (int i = 20 + offset; i > 20 - abs(value) + offset; i--)
       strip.setPixelColor(i - 1, red);
@@ -191,29 +226,34 @@ uint32_t greenRedFade(long i) {
   return i > 15 ? i == 20 ? red : strip.Color(r , g , 0) : green;
 }
 
-void printValues(int channel, boolean audioMode, long adc, float dB, long audNorm) {
-  switch (channel) {
-    case 16:
-      Serial.print("|INPUT1");
-      break;
-    case 14:
-      Serial.print("\t|INPUT2");
-      break;
-    case 15:
-      Serial.print("\t|INPUT3");
-      break;
-    default:
-      Serial.print("");
-  }
+void printValues(int channel, boolean audioMode,boolean controlSign, long adc, float dB, long audNorm) {
+//  switch (channel) {
+//    case 16:
+//      Serial.print("|INPUT1");
+//      break;
+//    case 14:
+//      Serial.print("\t|INPUT2");
+//      break;
+//    case 15:
+//      Serial.print("\t|INPUT3");
+//      break;
+//    default:
+//      Serial.print("");
+//  }
 
   Serial.print(" ");
-  Serial.print(audioMode ? "aud" : "ctl");
+  if(audioMode){
+    Serial.print("aud");
+  }else{
+    Serial.print("ctl");
+    Serial.print(controlSign ? "+": "-" );
+  }
   Serial.print("\t");
   Serial.print(adc);
   Serial.print("\t");
   //  Serial.print(rms);
   //  Serial.print("\t");
-  Serial.print(dB);
+//  Serial.print(dB);
   Serial.print(" ");
   Serial.print(audNorm);
 }
