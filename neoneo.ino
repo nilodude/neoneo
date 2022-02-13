@@ -199,7 +199,7 @@ void controlWipe(int value, int offset, boolean controlSign) {
       strip.setPixelColor(i - 1, red);
   } else {
     for (int i = 1 + offset; i <= value + 1 + offset; i++)
-      strip.setPixelColor(i - 1, green);
+      strip.setPixelColor(i - 1, !controlSign && value == 0? red : green);
   }
 }
 
@@ -227,19 +227,19 @@ uint32_t greenRedFade(long i) {
 }
 
 void printValues(int channel, boolean audioMode,boolean controlSign, long adc, float dB, long audNorm) {
-//  switch (channel) {
-//    case 16:
-//      Serial.print("|INPUT1");
-//      break;
-//    case 14:
-//      Serial.print("\t|INPUT2");
-//      break;
-//    case 15:
-//      Serial.print("\t|INPUT3");
-//      break;
-//    default:
-//      Serial.print("");
-//  }
+  switch (channel) {
+    case 16:
+      Serial.print("|INPUT1");
+      break;
+    case 14:
+      Serial.print("\t|INPUT2");
+      break;
+    case 15:
+      Serial.print("\t|INPUT3");
+      break;
+    default:
+      Serial.print("");
+  }
 
   Serial.print(" ");
   if(audioMode){
@@ -249,8 +249,8 @@ void printValues(int channel, boolean audioMode,boolean controlSign, long adc, f
     Serial.print(controlSign ? "+": "-" );
   }
   Serial.print("\t");
-  Serial.print(adc);
-  Serial.print("\t");
+//  Serial.print(adc);
+//  Serial.print("\t");
   //  Serial.print(rms);
   //  Serial.print("\t");
 //  Serial.print(dB);
