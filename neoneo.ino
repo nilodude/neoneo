@@ -67,18 +67,18 @@ void setup() {
   strip.begin();
   strip.show();
   strip.setBrightness(2);
-  
+
   measureMode();
 }
 
 void loop() {
 
-  if(startup){
+  if (startup) {
     startUpAnimation();
   }
   audNorm1 = measureSignal(IN1, audioMode1, aux1, controlSign1);
-  audNorm2 = measureSignal(IN2, audioMode2, aux2,controlSign2);
-  audNorm3 = measureSignal(IN3, audioMode3, aux3,controlSign3);
+  audNorm2 = measureSignal(IN2, audioMode2, aux2, controlSign2);
+  audNorm3 = measureSignal(IN3, audioMode3, aux3, controlSign3);
 
   Serial.println("");
 
@@ -91,7 +91,7 @@ void loop() {
   aux3 = audNorm3;
 }
 
-void measureMode(){
+void measureMode() {
   long raw1 = analoggRead(SW1);
   audioMode1 = raw1 > 513;
   controlSign1 = raw1 > 1;
@@ -104,23 +104,23 @@ void measureMode(){
   audioMode3 = raw3 > 513;
   controlSign3 = raw3 > 1;
 
-//  Serial.print(raw1);
-//  Serial.print("\t");
-//  Serial.print(audioMode1);
-//  Serial.print("\t");
-//  Serial.print(controlSign1);
-//  Serial.print("|");
-//  Serial.print(raw2);
-//  Serial.print("\t");
-//  Serial.print(audioMode2);
-//  Serial.print("\t");
-//  Serial.print(controlSign2);
-//  Serial.print("|");
-//  Serial.print(raw3);
-//  Serial.print("\t");
-//  Serial.print(audioMode3);
-//  Serial.print("\t");
-//  Serial.print(controlSign3);
+  //  Serial.print(raw1);
+  //  Serial.print("\t");
+  //  Serial.print(audioMode1);
+  //  Serial.print("\t");
+  //  Serial.print(controlSign1);
+  //  Serial.print("|");
+  //  Serial.print(raw2);
+  //  Serial.print("\t");
+  //  Serial.print(audioMode2);
+  //  Serial.print("\t");
+  //  Serial.print(controlSign2);
+  //  Serial.print("|");
+  //  Serial.print(raw3);
+  //  Serial.print("\t");
+  //  Serial.print(audioMode3);
+  //  Serial.print("\t");
+  //  Serial.print(controlSign3);
 }
 
 
@@ -141,10 +141,10 @@ long measureSignal(int channel, boolean audioMode, long aux, boolean controlSign
     audNorm = db2led(dB, aux);
   } else {
     //CONTROL MODE
-    audNorm = (41L * adc / 1024L) - 20;
+    audNorm = (40L * adc / 1024L) - 20;
   }
 
-  printValues(channel, audioMode,controlSign, adc, dB, audNorm);
+  printValues(channel, audioMode, controlSign, adc, dB, audNorm);
 
   return audNorm > 40 ? 40 : audNorm;
 }
@@ -173,17 +173,17 @@ void colorWipe() {
   if (audioMode1) { // AUDIO MODE
     audioWipe(audNorm1, OFF1);
   } else { // CONTROL MODE
-    controlWipe(audNorm1, OFF1,controlSign1);
+    controlWipe(audNorm1, OFF1, controlSign1);
   }
   if (audioMode2) { // AUDIO MODE
     audioWipe(audNorm2, OFF2);
   } else { // CONTROL MODE
-    controlWipe(audNorm2, OFF2,controlSign2);
+    controlWipe(audNorm2, OFF2, controlSign2);
   }
   if (audioMode3) { // AUDIO MODE
     audioWipe(audNorm3, OFF3);
   } else { // CONTROL MODE
-    controlWipe(audNorm3, OFF3,controlSign3);
+    controlWipe(audNorm3, OFF3, controlSign3);
   }
   strip.show();
 }
@@ -194,17 +194,19 @@ void audioWipe(int value, int offset) {
 }
 
 void controlWipe(int value, int offset, boolean controlSign) {
-  
   if (value + offset < 0 + offset) {
     for (int i = 20 + offset; i > 20 - abs(value) + offset; i--)
       strip.setPixelColor(i - 1, red);
   } else {
-    for (int i = 1 + offset; i <= value + 1 + offset; i++){
-      if(value + offset == 0 + offset){
+    for (int i = 1 + offset; i <= value + 1 + offset; i++) {
+      if (value + offset == 0 + offset) {
         strip.setPixelColor(i - 1, controlSign ? green : red);
-      }else if(i > 1 + offset){
+      } else if (i > 1 + offset) {
         strip.setPixelColor(i - 1, green);
       }
+    }
+    if (value + offset > 20 + offset) {
+      strip.setPixelColor(offset, green);
     }
   }
 }
@@ -232,7 +234,7 @@ uint32_t greenRedFade(long i) {
   return i > 15 ? i == 20 ? red : strip.Color(r , g , 0) : green;
 }
 
-void printValues(int channel, boolean audioMode,boolean controlSign, long adc, float dB, long audNorm) {
+void printValues(int channel, boolean audioMode, boolean controlSign, long adc, float dB, long audNorm) {
   switch (channel) {
     case 16:
       Serial.print("|INPUT1");
@@ -248,68 +250,67 @@ void printValues(int channel, boolean audioMode,boolean controlSign, long adc, f
   }
 
   Serial.print(" ");
-  if(audioMode){
+  if (audioMode) {
     Serial.print("aud");
-  }else{
+  } else {
     Serial.print("ctl");
-    Serial.print(controlSign ? "+": "-" );
+    Serial.print(controlSign ? "+" : "-" );
   }
   Serial.print("\t");
-//  Serial.print(adc);
-//  Serial.print("\t");
+  //  Serial.print(adc);
+  //  Serial.print("\t");
   //  Serial.print(rms);
   //  Serial.print("\t");
-//  Serial.print(dB);
+  //  Serial.print(dB);
   Serial.print(" ");
   Serial.print(audNorm);
 }
 
-void startUpAnimation(){
-   //rainbow(1);
-   snake(70);
+void startUpAnimation() {
+  //rainbow(1);
+  snake(70);
 }
 
-void snake(int wait){
+void snake(int wait) {
   strip.clear();
   int tail = 5;
-  for(int i=50;i<55;i++){
+  for (int i = 50; i < 55; i++) {
     strip.clear();
-    for(int j=i;j<i+tail;j++){
-      strip.setPixelColor(j,snakeColor);
+    for (int j = i; j < i + tail; j++) {
+      strip.setPixelColor(j, snakeColor);
     }
     strip.show();
     delay(wait);
   }
-  
-  for(int i=26;i>20;i--){
+
+  for (int i = 26; i > 20; i--) {
     strip.clear();
-    for(int j=i;j<i+tail;j++){
-      strip.setPixelColor(j,snakeColor);
+    for (int j = i; j < i + tail; j++) {
+      strip.setPixelColor(j, snakeColor);
     }
     strip.show();
     delay(wait);
   }
-  for(int i=11;i<16;i++){
+  for (int i = 11; i < 16; i++) {
     strip.clear();
-    for(int j=i;j<i+tail;j++){
-      strip.setPixelColor(j,snakeColor);
+    for (int j = i; j < i + tail; j++) {
+      strip.setPixelColor(j, snakeColor);
     }
     strip.show();
     delay(wait);
   }
-  startup=LOW;
+  startup = LOW;
 }
 
 void rainbow(int wait) {
-  for(long firstPixelHue = 0; firstPixelHue < 5*65536; firstPixelHue += 256) {
-    for(int i=0; i<strip.numPixels(); i++) { // For each pixel in strip...
+  for (long firstPixelHue = 0; firstPixelHue < 5 * 65536; firstPixelHue += 256) {
+    for (int i = 0; i < strip.numPixels(); i++) { // For each pixel in strip...
       int pixelHue = firstPixelHue + (i * 65536L / strip.numPixels());
-       strip.setPixelColor(i, strip.gamma32(strip.ColorHSV(pixelHue)));
+      strip.setPixelColor(i, strip.gamma32(strip.ColorHSV(pixelHue)));
     }
     strip.show(); // Update strip with new contents
     delay(wait);  // Pause for a moment
-    startup=LOW;
+    startup = LOW;
     strip.clear();
   }
 }
-  
