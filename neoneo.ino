@@ -194,12 +194,18 @@ void audioWipe(int value, int offset) {
 }
 
 void controlWipe(int value, int offset, boolean controlSign) {
+  
   if (value + offset < 0 + offset) {
     for (int i = 20 + offset; i > 20 - abs(value) + offset; i--)
       strip.setPixelColor(i - 1, red);
   } else {
-    for (int i = 1 + offset; i <= value + 1 + offset; i++)
-      strip.setPixelColor(i - 1, !controlSign && value == 0? red : green);
+    for (int i = 1 + offset; i <= value + 1 + offset; i++){
+      if(value + offset == 0 + offset){
+        strip.setPixelColor(i - 1, controlSign ? green : red);
+      }else if(i > 1 + offset){
+        strip.setPixelColor(i - 1, green);
+      }
+    }
   }
 }
 
