@@ -202,10 +202,12 @@ void controlWipe(int value, int offset, boolean controlSign) {
       if (value + offset == 0 + offset) {
         strip.setPixelColor(i - 1, controlSign ? green : red);
       } else if (i > 1 + offset) {
-        strip.setPixelColor(i - 1, green);
+         if(i != 21 + offset){
+          strip.setPixelColor(i - 1, green);
+         }
       }
     }
-    if (value + offset > 20 + offset) {
+    if (value + offset == 20 + offset) {
       strip.setPixelColor(offset, green);
     }
   }
