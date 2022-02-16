@@ -52,7 +52,7 @@ struct Map {
 //con el oscilador a pelo deberia encenderse hasta el led 15, con A = oscilador, B=2, C=0 --> A*B+C debe encender todo (oscilador *2)
 const Map lut[] = {
   { -30.5, 1},  { -30, 2},  { -30, 3},  { -26, 4},  { -25, 5}, { -24, 6},    { -23, 7 },    { -22, 8 },   { -21, 9},  { -20, 10},
-  { -19, 11}, { -18, 12}, { -16, 13}, { -14, 14},  { -12, 15},  { -11, 16},   { -10, 17}, { -8, 18},  { -6, 19},  { -3, 20}
+  { -19, 11}, { -18, 12}, { -16, 13}, { -14, 14},  { -12, 15},  { -10, 16},   { -8, 17}, { -6, 18},  { -4, 19},  { -2, 20}
 };
 
 Adafruit_NeoPixel strip(LED_COUNT, LED_PIN, NEO_GRB + NEO_KHZ800);
@@ -103,24 +103,6 @@ void measureMode() {
   long raw3 = analoggRead(SW3);
   audioMode3 = raw3 > 513;
   controlSign3 = raw3 > 1;
-
-  //  Serial.print(raw1);
-  //  Serial.print("\t");
-  //  Serial.print(audioMode1);
-  //  Serial.print("\t");
-  //  Serial.print(controlSign1);
-  //  Serial.print("|");
-  //  Serial.print(raw2);
-  //  Serial.print("\t");
-  //  Serial.print(audioMode2);
-  //  Serial.print("\t");
-  //  Serial.print(controlSign2);
-  //  Serial.print("|");
-  //  Serial.print(raw3);
-  //  Serial.print("\t");
-  //  Serial.print(audioMode3);
-  //  Serial.print("\t");
-  //  Serial.print(controlSign3);
 }
 
 
@@ -224,9 +206,16 @@ long db2led(float db, long aux) {
     index = (low + up) / 2;
   }
   led = lut[index].ledNumber;
-  if (led < aux)
-    led = aux * dropFactor;
-
+  if (led < aux){
+    if(led < 18 && led > 8){
+      led = ceil(aux * dropFactor);
+    }else if(led >=18){
+      led = aux * 0.95;
+    }else{
+      led = aux * dropFactor;
+    }
+  }
+  
   return led;
 }
 
@@ -259,11 +248,11 @@ void printValues(int channel, boolean audioMode, boolean controlSign, long adc, 
     Serial.print(controlSign ? "+" : "-" );
   }
   Serial.print("\t");
-  //  Serial.print(adc);
-  //  Serial.print("\t");
+  Serial.print(adc);
+  Serial.print("\t");
   //  Serial.print(rms);
   //  Serial.print("\t");
-  //  Serial.print(dB);
+  Serial.print(dB);
   Serial.print(" ");
   Serial.print(audNorm);
 }
