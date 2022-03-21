@@ -179,18 +179,12 @@ void controlWipe(int value, int offset, boolean controlSign) {
   if (value + offset < 0 + offset) {
     for (int i = 20 + offset; i > 20 - abs(value) + offset; i--)
       strip.setPixelColor(i - 1, red);
+
+    strip.setPixelColor(offset, red);
   } else {
-    for (int i = 1 + offset; i <= value + 1 + offset; i++) {
-      if (value + offset == 0 + offset) {
-        strip.setPixelColor(i - 1, controlSign ? green : red);
-      } else if (i > 1 + offset) {
-         if(i != 21 + offset){
-          strip.setPixelColor(i - 1, green);
-         }
-      }
-    }
-    if (value + offset == 20 + offset) {
-      strip.setPixelColor(offset, green);
+    strip.setPixelColor(offset, controlSign? green : red);
+    for (int i = 1 + offset; i <= value + offset; i++) {
+        strip.setPixelColor(i - 1, green);
     }
   }
 }
