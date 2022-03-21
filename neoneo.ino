@@ -126,7 +126,7 @@ long measureSignal(int channel, boolean audioMode, long aux, boolean controlSign
     audNorm = (40L * adc / 1024L) - 20;
   }
 
-  printValues(channel, audioMode, controlSign, adc, dB, audNorm);
+  //printValues(channel, audioMode, controlSign, adc, dB, audNorm);
 
   return audNorm > 40 ? 40 : audNorm;
 }
@@ -242,19 +242,19 @@ void printValues(int channel, boolean audioMode, boolean controlSign, long adc, 
 
   Serial.print(" ");
   if (audioMode) {
-    Serial.print("aud");
+    //Serial.print("aud");
   } else {
-    Serial.print("ctl");
-    Serial.print(controlSign ? "+" : "-" );
+    //Serial.print("ctl");
+    //Serial.print(controlSign ? "+" : "-" );
   }
   Serial.print("\t");
   Serial.print(adc);
-  Serial.print("\t");
+  //Serial.print("\t");
   //  Serial.print(rms);
   //  Serial.print("\t");
-  Serial.print(dB);
-  Serial.print(" ");
-  Serial.print(audNorm);
+  //Serial.print(dB);
+  //Serial.print(" ");
+  //Serial.print(audNorm);
 }
 
 void startUpAnimation() {
