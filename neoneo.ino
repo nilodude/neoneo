@@ -63,24 +63,20 @@ uint32_t blue = strip.Color(0, 0, 255);
 uint32_t snakeColor = strip.Color(255, 30, 255);
 
 void setup() {
-  Serial.begin(9600);
   strip.begin();
   strip.show();
   strip.setBrightness(2);
-
+  if (startup) {
+    startUpAnimation();
+  }
   measureMode();
 }
 
 void loop() {
 
-  if (startup) {
-    startUpAnimation();
-  }
   audNorm1 = measureSignal(IN1, audioMode1, aux1, controlSign1);
   audNorm2 = measureSignal(IN2, audioMode2, aux2, controlSign2);
   audNorm3 = measureSignal(IN3, audioMode3, aux3, controlSign3);
-
-  Serial.println("");
 
   colorWipe();
 
@@ -121,15 +117,10 @@ long measureSignal(int channel, boolean audioMode, long aux, boolean controlSign
   dB = 20.0 * log10(sqrt(rms) / MEAN);
 
   if (audioMode) {
-    //AUDIO MODE
     audNorm = db2led(dB, aux);
   } else {
-    //CONTROL MODE
     audNorm = (40L * adc / 1024L) - 20;
-    if (audNorm < aux){
-      //audNorm = audNorm-2;
-    }
-  }
+   }
   return audNorm > 40 ? 40 : audNorm;
 }
 
@@ -155,6 +146,7 @@ void colorWipe() {
   strip.clear();
 // en modo audio, que se borre toda (para que funcione como antes), en modo control, que se borre el que no se tenga que encender
   if (audioMode1) { // AUDIO MODE
+    
     audioWipe(audNorm1, OFF1);
   } else { // CONTROL MODE
     controlWipe(audNorm1, OFF1, controlSign1);
@@ -179,11 +171,16 @@ void audioWipe(int value, int offset) {
 
 void controlWipe(int value, int offset, boolean controlSign) {
   if (value + offset < 0 + offset) {
-    for (int i = 20 + offset; i > 20 - abs(value) + offset; i--)
-      strip.setPixelColor(i - 1, red); 
+    for (int i = 20 + offset; i > 20 -abs(value) + offset; i--)
+      strip.setPixelColor(i - 1, red);
+    //for(int i =20 -abs(value) + offset; i>offset;i--)
+      //strip.setPixelColor(i,0);
   } else {
     for (int i = 1 + offset; i <= value + offset; i++)
       strip.setPixelColor(i - 1, green);
+    //for(int i=value +offset; i <= offset+20;i++)
+      //strip.setPixelColor(i-1,0);
+    
   }
   strip.setPixelColor(offset, controlSign? green : red);
 }
