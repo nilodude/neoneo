@@ -181,15 +181,12 @@ void audioWipe(int value, int offset) {
 void controlWipe(int value, int offset, boolean controlSign) {
   if (value + offset < 0 + offset) {
     for (int i = 20 + offset; i > 20 - abs(value) + offset; i--)
-      strip.setPixelColor(i - 1, red);
-
-    strip.setPixelColor(offset, red);
+      strip.setPixelColor(i - 1, red); 
   } else {
-    strip.setPixelColor(offset, controlSign? green : red);
-    for (int i = 1 + offset; i <= value + offset; i++) {
-        strip.setPixelColor(i - 1, green);
-    }
+    for (int i = 1 + offset; i <= value + offset; i++)
+      strip.setPixelColor(i - 1, green);
   }
+  strip.setPixelColor(offset, controlSign? green : red);
 }
 
 long db2led(float db, long aux) {
