@@ -18,7 +18,7 @@
 #define LED_COUNT 60
 #define MEAN (512)
 #define NUM_SAMPLES (64)
-
+#define NUM_SAMPLES_CTRL (1)
 #define cbi(sfr, bit) (_SFR_BYTE(sfr) &= ~_BV(bit))
 #define sbi(sfr, bit) (_SFR_BYTE(sfr) |= _BV(bit))
 
@@ -107,14 +107,16 @@ void measureMode() {
 
 
 long measureSignal(int channel, boolean audioMode, long aux, boolean controlSign) {
-  long adc = 0, amp = 0, rms = 0, audNorm = 0;
+  long adc = 0, amp = 0, rms = 0, audNorm = 0, mean= 0;
   float dB = 0;
-  int numsamples = audioMode ? NUM_SAMPLES : 1;
+  int numsamples = audioMode ? NUM_SAMPLES : NUM_SAMPLES_CTRL;
   for (int i = 0; i < numsamples; i++)  {
     adc = 1022 - analoggRead(channel) + 2;
     amp = abs(adc - MEAN);
     rms += (long(amp) * amp);
+    mean += adc;
   }
+  mean /= NUM_SAMPLES_CTRL;
   rms /= numsamples;
   dB = 20.0 * log10(sqrt(rms) / MEAN);
 
@@ -124,9 +126,10 @@ long measureSignal(int channel, boolean audioMode, long aux, boolean controlSign
   } else {
     //CONTROL MODE
     audNorm = (40L * adc / 1024L) - 20;
+    if (audNorm < aux){
+      //audNorm = audNorm-2;
+    }
   }
-
-  //printValues(channel, audioMode, controlSign, adc, dB, audNorm);
 
   return audNorm > 40 ? 40 : audNorm;
 }
@@ -151,7 +154,7 @@ int analoggRead(uint8_t pin) {
 
 void colorWipe() {
   strip.clear();
-
+// en modo audio, que se borre toda (para que funcione como antes), en modo control, que se borre el que no se tenga que encender
   if (audioMode1) { // AUDIO MODE
     audioWipe(audNorm1, OFF1);
   } else { // CONTROL MODE
