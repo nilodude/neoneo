@@ -130,7 +130,6 @@ long measureSignal(int channel, boolean audioMode, long aux, boolean controlSign
       //audNorm = audNorm-2;
     }
   }
-
   return audNorm > 40 ? 40 : audNorm;
 }
 
