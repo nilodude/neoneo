@@ -18,4 +18,5 @@
 	-lighting out manually instead of strip.clear() gives same result, tested 2 ways (different loops, same loop)
 	-check frequency of neopixel in strip declaration --> boom
 03/05/22:
-	-need to apply envelope or filtering at the leds output
+	-need to apply envelope or filtering at the leds output. main goal is that it stays steady >50Hz
+	-seems that manually lighting off fixes some of the aliasing differences between inputs.

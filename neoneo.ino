@@ -22,6 +22,7 @@
 #define cbi(sfr, bit) (_SFR_BYTE(sfr) &= ~_BV(bit))
 #define sbi(sfr, bit) (_SFR_BYTE(sfr) |= _BV(bit))
 
+long start = 0;
 long audNorm1 = 0;
 long audNorm2 = 0;
 long audNorm3 = 0;
@@ -79,7 +80,7 @@ void loop() {
   audNorm3 = measureSignal(IN3, audioMode3, aux3, controlSign3);
 
   colorWipe();
-
+ 
   measureMode();
 
   aux1 = audNorm1;
@@ -103,7 +104,7 @@ void measureMode() {
 
 
 long measureSignal(int channel, boolean audioMode, long aux, boolean controlSign) {
-  long adc = 0, amp = 0, rms = 0, audNorm = 0, mean= 0;
+  long adc = 0, amp = 0, rms = 0, audNorm = 0, mean = 0;
   float dB = 0;
   int numsamples = audioMode ? NUM_SAMPLES : NUM_SAMPLES_CTRL;
   for (int i = 0; i < numsamples; i++)  {
@@ -143,52 +144,59 @@ int analoggRead(uint8_t pin) {
 }
 
 void colorWipe() {
-  if (audioMode1) { 
+  if (audioMode1) {
     audioWipe(audNorm1, OFF1);
-  } else { 
+  } else {
     controlWipe(audNorm1, OFF1, controlSign1);
   }
   if (audioMode2) {
     audioWipe(audNorm2, OFF2);
-  } else { 
+  } else {
     controlWipe(audNorm2, OFF2, controlSign2);
   }
-  if (audioMode3) { 
+  if (audioMode3) {
     audioWipe(audNorm3, OFF3);
-  } else { 
+  } else {
     controlWipe(audNorm3, OFF3, controlSign3);
   }
+
   strip.show();
+
 }
 
 void audioWipe(int value, int offset) {
-  for (int i = 1 + offset; i <= /*value */20+ offset; i++){
-    if(i <= value + offset){
-        strip.setPixelColor(i - 1, greenRedFade(i - offset));
-      }else{
-        strip.setPixelColor(i - 1, 0);
-      }
+  int i = 1 + offset;
+  while (i <= 20 + offset) {
+    if (i <= value + offset) {
+      strip.setPixelColor(i - 1, greenRedFade(i - offset));
+    } else {
+      strip.setPixelColor(i - 1, 0);
+    }
+    i++;
   }
 }
 
 void controlWipe(int value, int offset, boolean controlSign) {
   if (value + offset < 0 + offset) { //  NEGATIVE, RED
-    for (int i = 20 + offset; i > /*20 -abs(value) + */offset; i--){
-      if(i > 20 -abs(value) + offset){
-        strip.setPixelColor(i - 1, red);
-      }else{
-        strip.setPixelColor(i - 1, 0);
-      }
-    }
+//    for (int i = 20 + offset; i > offset; i--) {
+//      if (i > 20 - abs(value) + offset) {
+//        strip.setPixelColor(i - 1, red);
+//      } else {
+//        strip.setPixelColor(i - 1, 0);
+//      }
+//    }
+    
+    strip.fill(0,offset, 20 - abs(value) + offset);
+    strip.fill(red,20 - abs(value) + offset +1, 20 + offset);
   } else {                          //  POSITIVE, GREEN
-    for (int i = 1 + offset; i <= 20/*value  */+offset; i++)
-      if(i <= value + offset){
+    for (int i = 1 + offset; i <= 20 + offset; i++)
+      if (i <= value + offset) {
         strip.setPixelColor(i - 1, green);
-      }else{
+      } else {
         strip.setPixelColor(i - 1, 0);
       }
   }
-  strip.setPixelColor(offset, controlSign? green : red);
+  strip.setPixelColor(offset, controlSign ? green : red);
 }
 
 long db2led(float db, long aux) {
@@ -202,12 +210,12 @@ long db2led(float db, long aux) {
     index = (low + up) / 2;
   }
   led = lut[index].ledNumber;
-  if (led < aux){
-    if(led < 18 && led > 8){
+  if (led < aux) {
+    if (led < 18 && led > 8) {
       led = ceil(aux * dropFactor);
-    }else if(led >=18){
+    } else if (led >= 18) {
       led = aux * 0.95;
-    }else{
+    } else {
       led = aux * dropFactor;
     }
   }
