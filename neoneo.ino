@@ -66,7 +66,7 @@ uint32_t snakeColor = strip.Color(255, 30, 255);
 void setup() {
   strip.begin();
   strip.show();
-  strip.setBrightness(2);
+  strip.setBrightness(4);
   if (startup) {
     startUpAnimation();
   }
@@ -80,7 +80,7 @@ void loop() {
   audNorm3 = measureSignal(IN3, audioMode3, aux3, controlSign3);
 
   colorWipe();
- 
+
   measureMode();
 
   aux1 = audNorm1;
@@ -178,20 +178,24 @@ void audioWipe(int value, int offset) {
 
 void controlWipe(int value, int offset, boolean controlSign) {
   if (value + offset < 0 + offset) { //  NEGATIVE, RED
-//    for (int i = 20 + offset; i > offset; i--) {
-//      if (i > 20 - abs(value) + offset) {
-//        strip.setPixelColor(i - 1, red);
-//      } else {
-//        strip.setPixelColor(i - 1, 0);
-//      }
-//    }
-    
-    strip.fill(0,offset, 20 - abs(value) + offset);
-    strip.fill(red,20 - abs(value) + offset +1, 20 + offset);
+    //    for (int i = 20 + offset; i > offset; i--) {
+    //      if (i > 20 - abs(value) + offset) {
+    //        strip.setPixelColor(i - 1, red);
+    //      } else {
+    //        strip.setPixelColor(i - 1, 0);
+    //      }
+    //    }
+
+    strip.fill(0, offset, 20 - abs(value) + offset);
+    strip.fill(red, 20 - abs(value) + offset + 1, 20 + offset);
   } else {                          //  POSITIVE, GREEN
     for (int i = 1 + offset; i <= 20 + offset; i++)
       if (i <= value + offset) {
-        strip.setPixelColor(i - 1, green);
+        if (i > 2 + offset) {
+          strip.setPixelColor(i - 3, blue);
+        }
+        strip.setPixelColor(i - 2, strip.gamma32(strip.ColorHSV(65536 / 3, 255, 210)));
+        strip.setPixelColor(i - 1, strip.gamma32(strip.ColorHSV(65536 / 3, 255, 140)));
       } else {
         strip.setPixelColor(i - 1, 0);
       }

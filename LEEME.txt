@@ -20,3 +20,4 @@
 03/05/22:
 	-need to apply envelope or filtering at the leds output. main goal is that it stays steady >50Hz
 	-seems that manually lighting off fixes some of the aliasing differences between inputs.
+	-still problems with aliasing. need to do the envelope/lpf manually.
