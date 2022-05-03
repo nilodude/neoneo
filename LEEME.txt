@@ -13,7 +13,9 @@
 	
 02/05/22:
 	-el codigo que estaba cargado (01/05/2022) no era el ultimo.
-	-antialiasing: audioMode is filtered and looks ok. try applying same filter to controlMode-> not so easy
+	-antialiasing: audioMode is filtered and looks ok. try applying same filter to controlMode-> not so easy-> shit result
 	-input 2 something wrong. doesnt add with 1 or 3. 1 and 3 add together in 3.
 	-lighting out manually instead of strip.clear() gives same result, tested 2 ways (different loops, same loop)
 	-check frequency of neopixel in strip declaration --> boom
+03/05/22:
+	-need to apply envelope or filtering at the leds output
