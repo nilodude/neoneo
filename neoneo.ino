@@ -1,4 +1,5 @@
-#include <Adafruit_NeoPixel.h>
+//#include <Adafruit_NeoPixel.h>
+#include <FastLED_NeoPixel.h>
 
 #ifdef __AVR__
 #include <avr/power.h> // Required for 16 MHz Adafruit Trinket
@@ -56,7 +57,8 @@ const Map lut[] = {
   { -19, 11}, { -18, 12}, { -16, 13}, { -14, 14},  { -12, 15},  { -10, 16},   { -8, 17}, { -6, 18},  { -4, 19},  { -2, 20}
 };
 
-Adafruit_NeoPixel strip(LED_COUNT, LED_PIN, NEO_GRB + NEO_KHZ800);
+//Adafruit_NeoPixel strip(LED_COUNT, LED_PIN, NEO_GRB + NEO_KHZ800);
+FastLED_NeoPixel<LED_COUNT, LED_PIN, NEO_GRB + NEO_KHZ800> strip;
 
 uint32_t red = strip.Color(255, 0, 0);
 uint32_t green = strip.Color(0, 255, 0);
@@ -192,7 +194,7 @@ void controlWipe(int value, int offset, boolean controlSign) {
     for (int i = 1 + offset; i <= 20 + offset; i++)
       if (i <= value + offset) {
         if (i > 2 + offset) {
-          strip.setPixelColor(i - 3, blue);
+          strip.setPixelColor(i - 3, green);
         }
         strip.setPixelColor(i - 2, strip.gamma32(strip.ColorHSV(65536 / 3, 255, 210)));
         strip.setPixelColor(i - 1, strip.gamma32(strip.ColorHSV(65536 / 3, 255, 140)));

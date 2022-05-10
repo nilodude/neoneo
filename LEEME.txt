@@ -17,7 +17,17 @@
 	-input 2 something wrong. doesnt add with 1 or 3. 1 and 3 add together in 3.
 	-lighting out manually instead of strip.clear() gives same result, tested 2 ways (different loops, same loop)
 	-check frequency of neopixel in strip declaration --> boom
+	
 03/05/22:
 	-need to apply envelope or filtering at the leds output. main goal is that it stays steady >50Hz
 	-seems that manually lighting off fixes some of the aliasing differences between inputs.
 	-still problems with aliasing. need to do the envelope/lpf manually.
+
+09/05/22:
+	-need to implement FastLED_Neopixel library and see wtf. maybe rewrite everything inside colorWipe() depending on 
+	how library works.
+	
+10/05/22:
+	-fastLed works.
+	-cuando se incrementa el pote 2, se desplaza la entrada 1 y la 2 hacia la izquierda. 
+	
