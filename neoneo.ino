@@ -49,7 +49,6 @@ struct Map {
   long ledNumber;
 };
 
-//con el oscilador a pelo deberia encenderse hasta el led 15, con A = oscilador, B=2, C=0 --> A*B+C debe encender todo (oscilador *2)
 const Map lut[] = {
   { -30.5, 1},  { -30, 2},  { -30, 3},  { -26, 4},  { -25, 5}, { -24, 6},    { -23, 7 },    { -22, 8 },   { -21, 9},  { -20, 10},
   { -19, 11}, { -18, 12}, { -16, 13}, { -14, 14},  { -12, 15},  { -10, 16},   { -8, 17}, { -6, 18},  { -4, 19},  { -2, 20}
@@ -63,24 +62,19 @@ uint32_t blue = strip.Color(0, 0, 255);
 uint32_t snakeColor = strip.Color(255, 30, 255);
 
 void setup() {
-  Serial.begin(9600);
   strip.begin();
   strip.show();
-  strip.setBrightness(2);
-
+  strip.setBrightness(4);
+  if (startup) {
+    startUpAnimation();
+  }
   measureMode();
 }
 
 void loop() {
-
-  if (startup) {
-    startUpAnimation();
-  }
   audNorm1 = measureSignal(IN1, audioMode1, aux1, controlSign1);
   audNorm2 = measureSignal(IN2, audioMode2, aux2, controlSign2);
   audNorm3 = measureSignal(IN3, audioMode3, aux3, controlSign3);
-
-  Serial.println("");
 
   colorWipe();
 
@@ -121,14 +115,9 @@ long measureSignal(int channel, boolean audioMode, long aux, boolean controlSign
   dB = 20.0 * log10(sqrt(rms) / MEAN);
 
   if (audioMode) {
-    //AUDIO MODE
     audNorm = db2led(dB, aux);
   } else {
-    //CONTROL MODE
     audNorm = (40L * adc / 1024L) - 20;
-    if (audNorm < aux){
-      //audNorm = audNorm-2;
-    }
   }
   return audNorm > 40 ? 40 : audNorm;
 }
@@ -153,20 +142,19 @@ int analoggRead(uint8_t pin) {
 
 void colorWipe() {
   strip.clear();
-// en modo audio, que se borre toda (para que funcione como antes), en modo control, que se borre el que no se tenga que encender
-  if (audioMode1) { // AUDIO MODE
+  if (audioMode1) { 
     audioWipe(audNorm1, OFF1);
-  } else { // CONTROL MODE
+  } else { 
     controlWipe(audNorm1, OFF1, controlSign1);
   }
-  if (audioMode2) { // AUDIO MODE
+  if (audioMode2) { 
     audioWipe(audNorm2, OFF2);
-  } else { // CONTROL MODE
+  } else { 
     controlWipe(audNorm2, OFF2, controlSign2);
   }
-  if (audioMode3) { // AUDIO MODE
+  if (audioMode3) { 
     audioWipe(audNorm3, OFF3);
-  } else { // CONTROL MODE
+  } else { 
     controlWipe(audNorm3, OFF3, controlSign3);
   }
   strip.show();
@@ -218,40 +206,7 @@ uint32_t greenRedFade(long i) {
   return i > 15 ? i == 20 ? red : strip.Color(r , g , 0) : green;
 }
 
-void printValues(int channel, boolean audioMode, boolean controlSign, long adc, float dB, long audNorm) {
-  switch (channel) {
-    case 16:
-      Serial.print("|INPUT1");
-      break;
-    case 14:
-      Serial.print("\t|INPUT2");
-      break;
-    case 15:
-      Serial.print("\t|INPUT3");
-      break;
-    default:
-      Serial.print("");
-  }
-
-  Serial.print(" ");
-  if (audioMode) {
-    //Serial.print("aud");
-  } else {
-    //Serial.print("ctl");
-    //Serial.print(controlSign ? "+" : "-" );
-  }
-  Serial.print("\t");
-  Serial.print(adc);
-  //Serial.print("\t");
-  //  Serial.print(rms);
-  //  Serial.print("\t");
-  //Serial.print(dB);
-  //Serial.print(" ");
-  //Serial.print(audNorm);
-}
-
 void startUpAnimation() {
-  //rainbow(1);
   snake(70);
 }
 
@@ -284,17 +239,4 @@ void snake(int wait) {
     delay(wait);
   }
   startup = LOW;
-}
-
-void rainbow(int wait) {
-  for (long firstPixelHue = 0; firstPixelHue < 5 * 65536; firstPixelHue += 256) {
-    for (int i = 0; i < strip.numPixels(); i++) { // For each pixel in strip...
-      int pixelHue = firstPixelHue + (i * 65536L / strip.numPixels());
-      strip.setPixelColor(i, strip.gamma32(strip.ColorHSV(pixelHue)));
-    }
-    strip.show(); // Update strip with new contents
-    delay(wait);  // Pause for a moment
-    startup = LOW;
-    strip.clear();
-  }
 }
