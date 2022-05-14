@@ -105,7 +105,7 @@ long measureSignal(int channel, boolean audioMode, long aux, boolean controlSign
   float dB = 0;
   int numsamples = audioMode ? NUM_SAMPLES : NUM_SAMPLES_CTRL;
   for (int i = 0; i < numsamples; i++)  {
-    adc = 1022 - analoggRead(channel) + 2;
+    adc = 1023 - analoggRead(channel) + 1;
     amp = abs(adc - MEAN);
     rms += (long(amp) * amp);
     mean += adc;

@@ -31,5 +31,6 @@
     
 10/05/22:
     -fastLed works.
-    -cuando se incrementa el pote 2, se desplaza la entrada 1 y la 2 hacia la izquierda. 
+    -cuando se incrementa el pote 2, se desplaza la entrada 1 y la 2 hacia la izquierda. -> culpa mia
+	-i hope optimizing the code mitigates aliasing
     
