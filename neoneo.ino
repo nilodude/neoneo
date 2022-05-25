@@ -111,7 +111,8 @@ long measureSignal(int channel, boolean audioMode, long aux, boolean controlSign
   float dB = 0;
   int numsamples = audioMode ? NUM_SAMPLES : NUM_SAMPLES_CTRL;
   for (int i = 0; i < numsamples; i++)  {
-    adc = 1023 - analoggRead(channel)+1;
+    //falta que en ctl- llegue hasta el 0, que no se quede en 81
+    adc = max(0,min(1024,1023 - analoggRead(channel)+1 +80 ));
     amp = abs(adc - MEAN);
     rms += (int(amp) * amp);
     mean += adc;
@@ -272,7 +273,7 @@ void printValues(int channel, boolean audioMode, boolean controlSign, long adc, 
     Serial.print(controlSign ? "+" : "-" );
   }
   Serial.print("\t");
-  Serial.print(analogRead(channel));
+  Serial.print(adc);
   Serial.print("\t");
-  Serial.print(audNorm);
+  Serial.print(analoggRead(channel));
 }
