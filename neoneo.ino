@@ -110,9 +110,10 @@ long measureSignal(int channel, boolean audioMode, long aux, boolean controlSign
   int adc = 0, amp = 0, rms = 0, audNorm = 0, mean = 0;
   float dB = 0;
   int numsamples = audioMode ? NUM_SAMPLES : NUM_SAMPLES_CTRL;
+  int offset = controlSign ?80 : -80;
   for (int i = 0; i < numsamples; i++)  {
     //falta que en ctl- llegue hasta el 0, que no se quede en 81
-    adc = max(0,min(1024,1023 - analoggRead(channel)+1 +80 ));
+    adc = max(0,min(1024,1024-analoggRead(channel)+1 +80 ))+offset;
     amp = abs(adc - MEAN);
     rms += (int(amp) * amp);
     mean += adc;
