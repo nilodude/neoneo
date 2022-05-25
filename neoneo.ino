@@ -25,6 +25,9 @@
 long audNorm1 = 0;
 long audNorm2 = 0;
 long audNorm3 = 0;
+long raw1 = 0;
+long raw2 = 0;
+long raw3 = 0;
 
 boolean audioMode1 = LOW;
 boolean controlSign1 = LOW;
@@ -62,6 +65,7 @@ uint32_t blue = strip.Color(0, 0, 255);
 uint32_t snakeColor = strip.Color(255, 30, 255);
 
 void setup() {
+  Serial.begin(9600);
   strip.begin();
   strip.show();
   strip.setBrightness(4);
@@ -83,42 +87,45 @@ void loop() {
   aux1 = audNorm1;
   aux2 = audNorm2;
   aux3 = audNorm3;
+  Serial.println();
 }
 
 void measureMode() {
-  long raw1 = analoggRead(SW1);
-  audioMode1 = raw1 > 513;
+  int thres = 606;
+  raw1 = analoggRead(SW1);
+  audioMode1 = raw1 > thres;
   controlSign1 = raw1 > 1;
 
-  long raw2 = analoggRead(SW2);
-  audioMode2 = raw2 > 513;
+  raw2 = analoggRead(SW2);
+  audioMode2 = raw2 > thres;
   controlSign2 = raw2 > 1;
 
-  long raw3 = analoggRead(SW3);
-  audioMode3 = raw3 > 513;
+  raw3 = analoggRead(SW3);
+  audioMode3 = raw3 > thres;
   controlSign3 = raw3 > 1;
 }
 
 
 long measureSignal(int channel, boolean audioMode, long aux, boolean controlSign) {
-  long adc = 0, amp = 0, rms = 0, audNorm = 0, mean= 0;
+  int adc = 0, amp = 0, rms = 0, audNorm = 0, mean = 0;
   float dB = 0;
   int numsamples = audioMode ? NUM_SAMPLES : NUM_SAMPLES_CTRL;
   for (int i = 0; i < numsamples; i++)  {
-    adc = 1023 - analoggRead(channel) + 1;
+    adc = 1023 - analoggRead(channel)+1;
     amp = abs(adc - MEAN);
-    rms += (long(amp) * amp);
+    rms += (int(amp) * amp);
     mean += adc;
   }
   mean /= NUM_SAMPLES_CTRL;
   rms /= numsamples;
   dB = 20.0 * log10(sqrt(rms) / MEAN);
 
-  if (audioMode) {
+  if (audioMode) { 
     audNorm = db2led(dB, aux);
   } else {
     audNorm = (40L * adc / 1024L) - 20;
   }
+  printValues(channel,audioMode, controlSign, adc, dB,audNorm);
   return audNorm > 40 ? 40 : audNorm;
 }
 
@@ -142,21 +149,22 @@ int analoggRead(uint8_t pin) {
 
 void colorWipe() {
   strip.clear();
-  if (audioMode1) { 
+  if (audioMode1) {
     audioWipe(audNorm1, OFF1);
-  } else { 
+  } else {
     controlWipe(audNorm1, OFF1, controlSign1);
   }
-  if (audioMode2) { 
+  if (audioMode2) {
     audioWipe(audNorm2, OFF2);
-  } else { 
+  } else {
     controlWipe(audNorm2, OFF2, controlSign2);
   }
-  if (audioMode3) { 
+  if (audioMode3) {
     audioWipe(audNorm3, OFF3);
-  } else { 
+  } else {
     controlWipe(audNorm3, OFF3, controlSign3);
   }
+
   strip.show();
 }
 
@@ -168,12 +176,12 @@ void audioWipe(int value, int offset) {
 void controlWipe(int value, int offset, boolean controlSign) {
   if (value + offset < 0 + offset) {
     for (int i = 20 + offset; i > 20 - abs(value) + offset; i--)
-      strip.setPixelColor(i - 1, red); 
+      strip.setPixelColor(i - 1, red);
   } else {
     for (int i = 1 + offset; i <= value + offset; i++)
       strip.setPixelColor(i - 1, green);
   }
-  strip.setPixelColor(offset, controlSign? green : red);
+  strip.setPixelColor(offset, controlSign ? green : red);
 }
 
 long db2led(float db, long aux) {
@@ -187,16 +195,16 @@ long db2led(float db, long aux) {
     index = (low + up) / 2;
   }
   led = lut[index].ledNumber;
-  if (led < aux){
-    if(led < 18 && led > 8){
+  if (led < aux) {
+    if (led < 18 && led > 8) {
       led = ceil(aux * dropFactor);
-    }else if(led >=18){
+    } else if (led >= 18) {
       led = aux * 0.95;
-    }else{
+    } else {
       led = aux * dropFactor;
     }
   }
-  
+
   return led;
 }
 
@@ -239,4 +247,32 @@ void snake(int wait) {
     delay(wait);
   }
   startup = LOW;
+}
+
+void printValues(int channel, boolean audioMode, boolean controlSign, long adc, float dB, long audNorm) {
+  switch (channel) {
+    case 16:
+      Serial.print("|INPUT1");
+      break;
+    case 14:
+      Serial.print("\t|INPUT2");
+      break;
+    case 15:
+      Serial.print("\t|INPUT3");
+      break;
+    default:
+      Serial.print("");
+  }
+
+  Serial.print(" ");
+  if (audioMode) {
+    Serial.print("aud");
+  } else {
+    Serial.print("ctl");
+    Serial.print(controlSign ? "+" : "-" );
+  }
+  Serial.print("\t");
+  Serial.print(analogRead(channel));
+  Serial.print("\t");
+  Serial.print(audNorm);
 }
