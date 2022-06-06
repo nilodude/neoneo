@@ -107,13 +107,13 @@ void measureMode() {
 
 
 long measureSignal(int channel, boolean audioMode, long aux, boolean controlSign) {
-  int adc = 0, amp = 0, rms = 0, audNorm = 0, mean = 0;
+  int raw = 0, scaled = 0, adc = 0, amp = 0, rms = 0, audNorm = 0, mean = 0;
   float dB = 0;
   int numsamples = audioMode ? NUM_SAMPLES : NUM_SAMPLES_CTRL;
-  int offset = controlSign ?80 : -80;
   for (int i = 0; i < numsamples; i++)  {
-    //falta que en ctl- llegue hasta el 0, que no se quede en 81
-    adc = max(0,min(1024,1024-analoggRead(channel)+1 +80 ))+offset;
+    raw = analoggRead(channel); 
+    scaled = 1024-max(raw-79,0);                            // el offset soluciona la parte positiva
+    adc = controlSign ?  scaled: map(scaled,79,514,0,517); // la reescala/remapeo "estira" los valores rojos
     amp = abs(adc - MEAN);
     rms += (int(amp) * amp);
     mean += adc;
@@ -127,7 +127,7 @@ long measureSignal(int channel, boolean audioMode, long aux, boolean controlSign
   } else {
     audNorm = (40L * adc / 1024L) - 20;
   }
-  printValues(channel,audioMode, controlSign, adc, dB,audNorm);
+  printValues(channel,audioMode, controlSign, raw, adc,audNorm);
   return audNorm > 40 ? 40 : audNorm;
 }
 
@@ -251,16 +251,16 @@ void snake(int wait) {
   startup = LOW;
 }
 
-void printValues(int channel, boolean audioMode, boolean controlSign, long adc, float dB, long audNorm) {
+void printValues(int channel, boolean audioMode, boolean controlSign, int raw, int adc, long audNorm) {
   switch (channel) {
     case 16:
-      Serial.print("|INPUT1");
+      Serial.print("|IN1");
       break;
     case 14:
-      Serial.print("\t|INPUT2");
+      Serial.print("\t|IN2");
       break;
     case 15:
-      Serial.print("\t|INPUT3");
+      Serial.print("\t|IN3");
       break;
     default:
       Serial.print("");
@@ -274,7 +274,9 @@ void printValues(int channel, boolean audioMode, boolean controlSign, long adc, 
     Serial.print(controlSign ? "+" : "-" );
   }
   Serial.print("\t");
+  Serial.print(raw);
+  Serial.print("\t");
   Serial.print(adc);
   Serial.print("\t");
-  Serial.print(analoggRead(channel));
+  Serial.print(audNorm);
 }
