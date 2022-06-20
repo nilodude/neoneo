@@ -45,7 +45,7 @@ long led3 = 0;
 
 boolean startup = HIGH;
 
-float dropFactor = .91;
+float dropFactor = .89;
 
 struct Map {
   float dbValue;
@@ -107,13 +107,14 @@ void measureMode() {
 
 
 long measureSignal(int channel, boolean audioMode, long aux, boolean controlSign) {
-  int adc = 0, amp = 0, rms = 0, audNorm = 0, mean = 0;
+  int adc = 0, amp = 0, audNorm = 0, mean = 0;
+  long rms = 0;
   float dB = 0;
   int numsamples = audioMode ? NUM_SAMPLES : NUM_SAMPLES_CTRL;
   for (int i = 0; i < numsamples; i++)  {
     adc = 1023 - analoggRead(channel);
     amp = abs(adc - MEAN);
-    rms += (int(amp) * amp);
+    rms += (long(amp) * amp);
     mean += adc;
   }
   mean /= NUM_SAMPLES_CTRL;
