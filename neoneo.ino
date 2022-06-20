@@ -45,7 +45,7 @@ long led3 = 0;
 
 boolean startup = HIGH;
 
-float dropFactor = .89;
+float dropFactor = .91;
 
 struct Map {
   float dbValue;
@@ -111,7 +111,7 @@ long measureSignal(int channel, boolean audioMode, long aux, boolean controlSign
   float dB = 0;
   int numsamples = audioMode ? NUM_SAMPLES : NUM_SAMPLES_CTRL;
   for (int i = 0; i < numsamples; i++)  {
-    adc = 1023 - analoggRead(channel)+1;
+    adc = 1023 - analoggRead(channel);
     amp = abs(adc - MEAN);
     rms += (int(amp) * amp);
     mean += adc;
@@ -123,7 +123,7 @@ long measureSignal(int channel, boolean audioMode, long aux, boolean controlSign
   if (audioMode) { 
     audNorm = db2led(dB, aux);
   } else {
-    audNorm = (40L * adc / 1024L) - 20;
+    audNorm = (40 * ((float)adc / 1024) - 20);
   }
   printValues(channel,audioMode, controlSign, adc, dB,audNorm);
   return audNorm > 40 ? 40 : audNorm;
@@ -179,7 +179,7 @@ void controlWipe(int value, int offset, boolean controlSign) {
       strip.setPixelColor(i - 1, red);
   } else {
     for (int i = 1 + offset; i <= value + offset; i++)
-      strip.setPixelColor(i - 1, green);
+      strip.setPixelColor(i, green);
   }
   strip.setPixelColor(offset, controlSign ? green : red);
 }
@@ -272,7 +272,7 @@ void printValues(int channel, boolean audioMode, boolean controlSign, long adc, 
     Serial.print(controlSign ? "+" : "-" );
   }
   Serial.print("\t");
-  Serial.print(analogRead(channel));
+  Serial.print(adc);
   Serial.print("\t");
   Serial.print(audNorm);
 }

@@ -34,3 +34,14 @@
     -cuando se incrementa el pote 2, se desplaza la entrada 1 y la 2 hacia la izquierda. -> culpa mia
 	-i hope optimizing the code mitigates aliasing
     
+	
+	
+	
+	
+	
+20/06/22:
+	-solo el switch de cada entrada afecta a cada entrada, ya no se afectan entre sí.
+	-el problema solo aparece en modo ctrl+, y el desajuste es de +-1
+	-al hacer correctamente las operaciones con coma flotante no hay desajuste de +-1, por ahora, en ningún caso
+	-cuando audNorm vale 1 en ctrl+ deberia encenderse ya el primer led, y solo se enciende hasta que audNorm vale 2. solucionado.
+	-
