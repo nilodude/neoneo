@@ -35,3 +35,5 @@
 	-i hope optimizing the code mitigates aliasing
 25/05/22_
 	-hay que jugar con el orden en el que se le aplica el offset y se invierte la señal del ADC. va por ahi.
+6/6/22:
+	-por mucho truco y mucho offset, los valores de las entradas cambian, dependen de las otras entradas

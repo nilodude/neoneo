@@ -56,6 +56,15 @@ const Map lut[] = {
   { -30.5, 1},  { -30, 2},  { -30, 3},  { -26, 4},  { -25, 5}, { -24, 6},    { -23, 7 },    { -22, 8 },   { -21, 9},  { -20, 10},
   { -19, 11}, { -18, 12}, { -16, 13}, { -14, 14},  { -12, 15},  { -10, 16},   { -8, 17}, { -6, 18},  { -4, 19},  { -2, 20}
 };
+struct Map2 {
+  int in;
+  int out;
+};
+
+const int lut2[] = {
+  
+};
+
 
 Adafruit_NeoPixel strip(LED_COUNT, LED_PIN, NEO_GRB + NEO_KHZ800);
 
@@ -91,7 +100,7 @@ void loop() {
 }
 
 void measureMode() {
-  int thres = 606;
+  int thres =2000;
   raw1 = analoggRead(SW1);
   audioMode1 = raw1 > thres;
   controlSign1 = raw1 > 1;
@@ -111,9 +120,9 @@ long measureSignal(int channel, boolean audioMode, long aux, boolean controlSign
   float dB = 0;
   int numsamples = audioMode ? NUM_SAMPLES : NUM_SAMPLES_CTRL;
   for (int i = 0; i < numsamples; i++)  {
-    raw = analoggRead(channel); 
-    scaled = 1024-max(raw-79,0);                            // el offset soluciona la parte positiva
-    adc = controlSign ?  scaled: map(scaled,79,514,0,517); // la reescala/remapeo "estira" los valores rojos
+    raw = controlSign ? map(analoggRead(channel),0,1023,0,879) : map(analoggRead(channel),590,1023,512,1023) ; 
+    scaled = 1024-/*max(raw-79,0)*/raw;                            // el offset soluciona la parte positiva
+    adc = controlSign ?  scaled : scaled;/*map(scaled,433,1024,512,1024): map(scaled,79,512,0,512)*/; // la reescala/remapeo "estira" los valores rojos
     amp = abs(adc - MEAN);
     rms += (int(amp) * amp);
     mean += adc;
