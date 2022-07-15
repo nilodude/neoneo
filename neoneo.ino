@@ -1,4 +1,5 @@
 #include <Adafruit_NeoPixel.h>
+#include "Input.h"
 
 #ifdef __AVR__
 #include <avr/power.h> // Required for 16 MHz Adafruit Trinket
@@ -25,9 +26,10 @@
 long audNorm1 = 0;
 long audNorm2 = 0;
 long audNorm3 = 0;
-long raw1 = 0;
-long raw2 = 0;
-long raw3 = 0;
+
+int raw1 = 0;
+int raw2 = 0;
+int raw3 = 0;
 
 boolean audioMode1 = LOW;
 boolean controlSign1 = LOW;
@@ -39,9 +41,10 @@ boolean controlSign3 = LOW;
 long aux1 = 0;
 long aux2 = 0;
 long aux3 = 0;
-long led1 = 0;
-long led2 = 0;
-long led3 = 0;
+
+Input input1(IN1, SW1,OFF1);
+Input input2(IN2, SW2, OFF1);
+Input input3(IN3, SW3, OFF3);
 
 boolean startup = HIGH;
 
