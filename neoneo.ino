@@ -42,7 +42,7 @@ long aux1 = 0;
 long aux2 = 0;
 long aux3 = 0;
 
-Input input1(IN1, SW1,OFF1);
+Input input1(A2, SW1,OFF1);
 Input input2(IN2, SW2, OFF1);
 Input input3(IN3, SW3, OFF3);
 
@@ -76,12 +76,17 @@ void setup() {
     startUpAnimation();
   }
   measureMode();
+  Serial.println(input1.audioPin);
 }
 
 void loop() {
-  audNorm1 = measureSignal(IN1, audioMode1, aux1, controlSign1);
-  audNorm2 = measureSignal(IN2, audioMode2, aux2, controlSign2);
-  audNorm3 = measureSignal(IN3, audioMode3, aux3, controlSign3);
+  //audNorm1 = measureSignal(IN1, audioMode1, aux1, controlSign1);
+  //audNorm2 = measureSignal(IN2, audioMode2, aux2, controlSign2);
+  //audNorm3 = measureSignal(IN3, audioMode3, aux3, controlSign3);
+
+  audNorm1 = measureSignal(input1.audioPin, input1.audioMode, input1.aux, input1.controlSign);
+  audNorm2 = measureSignal(input2.audioPin, input2.audioMode, input2.aux, input2.controlSign);
+  audNorm3 = measureSignal(input3.audioPin, input3.audioMode, input3.aux, input3.controlSign);
 
   colorWipe();
 
@@ -90,7 +95,7 @@ void loop() {
   aux1 = audNorm1;
   aux2 = audNorm2;
   aux3 = audNorm3;
-  Serial.println();
+  //Serial.println();
 }
 
 void measureMode() {
@@ -129,8 +134,32 @@ long measureSignal(int channel, boolean audioMode, long aux, boolean controlSign
   } else {
     audNorm = (40 * ((float)adc / 1024) - 20);
   }
-  printValues(channel,audioMode, controlSign, adc, dB,audNorm);
+  //printValues(channel,audioMode, controlSign, adc, dB,audNorm);
   return audNorm > 40 ? 40 : audNorm;
+}
+
+long measureSignal2(Input input) {
+  int adc = 0, amp = 0, audNorm = 0, mean = 0;
+  long rms = 0;
+  float dB = 0;
+  int numsamples = input.audioMode ? NUM_SAMPLES : NUM_SAMPLES_CTRL;
+  for (int i = 0; i < numsamples; i++)  {
+    adc = 1023 - analoggRead(input.audioPin);
+    amp = abs(adc - MEAN);
+    rms += (long(amp) * amp);
+    mean += adc;
+  }
+  mean /= NUM_SAMPLES_CTRL;
+  rms /= numsamples;
+  dB = 20.0 * log10(sqrt(rms) / MEAN);
+
+  if (input.audioMode) { 
+    input.audNorm = db2led(dB, input.aux);
+  } else {
+    input.audNorm = (40 * ((float)adc / 1024) - 20);
+  }
+  printValues(input.audioPin,input.audioMode, input.controlSign, adc, dB,input.audNorm);
+  return input.audNorm > 40 ? 40 : input.audNorm;
 }
 
 int analoggRead(uint8_t pin) {

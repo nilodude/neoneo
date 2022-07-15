@@ -4,14 +4,13 @@
 class Input {
 public:
   Input(int audioPin, int switchPin, int offset);
-private:
-  int _audioPin;
-  int _switchPin;
-  int _offset;
-  int _raw;
-  boolean _audioMode;
-  boolean _controlSign;
-  long _audNorm;
-  long _aux;
+  int audioPin;
+  int switchPin;
+  int offset;
+  int raw;
+  boolean audioMode;
+  boolean controlSign;
+  long audNorm;
+  long aux;
 };
 #endif

@@ -1,14 +1,14 @@
 #include "Arduino.h"
 #include "Input.h"
 Input::Input(int audioPin, int switchPin, int offset) {
-  _audioPin= audioPin;
-  _switchPin = switchPin;
-  _offset = offset;
-  _raw = 0;
-  _audioMode = LOW;
-  _controlSign = LOW;
-  _audNorm = 0;
-  _aux = 0;
+  audioPin= audioPin;
+  switchPin = switchPin;
+  offset = offset;
+  raw = 0;
+  audioMode = LOW;
+  controlSign = LOW;
+  audNorm = 0;
+  aux = 0;
 }
 
 
