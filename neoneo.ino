@@ -1,5 +1,5 @@
 #include <Adafruit_NeoPixel.h>
-#include "Input.h"
+//#include "Input.h"
 
 #ifdef __AVR__
 #include <avr/power.h> // Required for 16 MHz Adafruit Trinket
@@ -42,9 +42,7 @@ long aux1 = 0;
 long aux2 = 0;
 long aux3 = 0;
 
-Input input1(A2, SW1,OFF1);
-Input input2(IN2, SW2, OFF1);
-Input input3(IN3, SW3, OFF3);
+
 
 boolean startup = HIGH;
 
@@ -54,6 +52,21 @@ struct Map {
   float dbValue;
   long ledNumber;
 };
+
+struct Input {
+  int audioPin;
+  int switchPin;
+  int offset;
+  int raw;
+  boolean audioMode;
+  boolean controlSign;
+  long audNorm;
+  long aux;
+};
+
+Input input1 = {IN1, SW1,OFF1,0,LOW,LOW,0,0};
+Input input2= {IN2, SW2, OFF1,0,LOW,LOW,0,0};
+Input input3= {IN3, SW3, OFF3,0,LOW,LOW,0,0};
 
 const Map lut[] = {
   { -30.5, 1},  { -30, 2},  { -30, 3},  { -26, 4},  { -25, 5}, { -24, 6},    { -23, 7 },    { -22, 8 },   { -21, 9},  { -20, 10},
@@ -76,7 +89,7 @@ void setup() {
     startUpAnimation();
   }
   measureMode();
-  Serial.println(input1.audioPin);
+  //Serial.println(input1.audioPin);
 }
 
 void loop() {
@@ -84,9 +97,13 @@ void loop() {
   //audNorm2 = measureSignal(IN2, audioMode2, aux2, controlSign2);
   //audNorm3 = measureSignal(IN3, audioMode3, aux3, controlSign3);
 
-  audNorm1 = measureSignal(input1.audioPin, input1.audioMode, input1.aux, input1.controlSign);
-  audNorm2 = measureSignal(input2.audioPin, input2.audioMode, input2.aux, input2.controlSign);
-  audNorm3 = measureSignal(input3.audioPin, input3.audioMode, input3.aux, input3.controlSign);
+  //audNorm1 = measureSignal(input1.audioPin, input1.audioMode, input1.aux, input1.controlSign);
+  //audNorm2 = measureSignal(input2.audioPin, input2.audioMode, input2.aux, input2.controlSign);
+  //audNorm3 = measureSignal(input3.audioPin, input3.audioMode, input3.aux, input3.controlSign);
+
+  audNorm1 = measureSignal2(input1);
+  audNorm2 = measureSignal2(input2);
+  audNorm3 = measureSignal2(input3);
 
   colorWipe();
 
@@ -95,7 +112,7 @@ void loop() {
   aux1 = audNorm1;
   aux2 = audNorm2;
   aux3 = audNorm3;
-  //Serial.println();
+  Serial.println();
 }
 
 void measureMode() {
@@ -134,7 +151,7 @@ long measureSignal(int channel, boolean audioMode, long aux, boolean controlSign
   } else {
     audNorm = (40 * ((float)adc / 1024) - 20);
   }
-  //printValues(channel,audioMode, controlSign, adc, dB,audNorm);
+  printValues(channel,audioMode, controlSign, adc, dB,audNorm);
   return audNorm > 40 ? 40 : audNorm;
 }
 
