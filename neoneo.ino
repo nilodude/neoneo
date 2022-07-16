@@ -38,9 +38,9 @@ boolean controlSign2 = LOW;
 boolean audioMode3 = LOW;
 boolean controlSign3 = LOW;
 
-long aux1 = 0;
-long aux2 = 0;
-long aux3 = 0;
+long last1 = 0;
+long last2 = 0;
+long last3 = 0;
 
 
 
@@ -57,16 +57,17 @@ struct Input {
   int audioPin;
   int switchPin;
   int offset;
+  int adc;
   int raw;
   boolean audioMode;
   boolean controlSign;
   long audNorm;
-  long aux;
+  long last;
 };
 
-Input input1 = {IN1, SW1,OFF1,0,LOW,LOW,0,0};
-Input input2= {IN2, SW2, OFF1,0,LOW,LOW,0,0};
-Input input3= {IN3, SW3, OFF3,0,LOW,LOW,0,0};
+Input input1 = {IN1, SW1,OFF1,0,0,LOW,LOW,0,0};
+Input input2 = {IN2, SW2, OFF2,0,0,LOW,LOW,0,0};
+Input input3 = {IN3, SW3, OFF3,0,0,LOW,LOW,0,0};
 
 const Map lut[] = {
   { -30.5, 1},  { -30, 2},  { -30, 3},  { -26, 4},  { -25, 5}, { -24, 6},    { -23, 7 },    { -22, 8 },   { -21, 9},  { -20, 10},
@@ -88,56 +89,66 @@ void setup() {
   if (startup) {
     startUpAnimation();
   }
-  measureMode();
+  measureMode(&input1);
+  measureMode(&input2);
+  measureMode(&input3);
+
   //Serial.println(input1.audioPin);
 }
 
 void loop() {
-  //audNorm1 = measureSignal(IN1, audioMode1, aux1, controlSign1);
-  //audNorm2 = measureSignal(IN2, audioMode2, aux2, controlSign2);
-  //audNorm3 = measureSignal(IN3, audioMode3, aux3, controlSign3);
+  //audNorm1 = measureSignal(IN1, audioMode1, last1, controlSign1);
+  //audNorm2 = measureSignal(IN2, audioMode2, last2, controlSign2);
+  //audNorm3 = measureSignal(IN3, audioMode3, last3, controlSign3);
 
-  //audNorm1 = measureSignal(input1.audioPin, input1.audioMode, input1.aux, input1.controlSign);
-  //audNorm2 = measureSignal(input2.audioPin, input2.audioMode, input2.aux, input2.controlSign);
-  //audNorm3 = measureSignal(input3.audioPin, input3.audioMode, input3.aux, input3.controlSign);
+  //audNorm1 = measureSignal(input1.audioPin, input1.audioMode, input1.last, input1.controlSign);
+  //audNorm2 = measureSignal(input2.audioPin, input2.audioMode, input2.last, input2.controlSign);
+  //audNorm3 = measureSignal(input3.audioPin, input3.audioMode, input3.last, input3.controlSign);
 
-  audNorm1 = measureSignal2(input1);
-  audNorm2 = measureSignal2(input2);
-  audNorm3 = measureSignal2(input3);
+  //audNorm1 = measureSignal2(input1);
+  //audNorm2 = measureSignal2(input2);
+  //audNorm3 = measureSignal2(input3);
 
-  colorWipe();
+  measureSignal2(&input1);
+  measureSignal2(&input2);
+  measureSignal2(&input3);
 
-  measureMode();
+  strip.clear();
+  colorWipe(input1.audioMode, input1.controlSign, input1.audNorm, input1.offset);
+  colorWipe(input2.audioMode, input2.controlSign, input2.audNorm, input2.offset);
+  colorWipe(input3.audioMode,input3.controlSign,  input3.audNorm, input3.offset);
+  strip.show();
+  
+  measureMode(&input1);
+  measureMode(&input2);
+  measureMode(&input3);
 
-  aux1 = audNorm1;
-  aux2 = audNorm2;
-  aux3 = audNorm3;
+  input1.last = input1.audNorm;
+  input2.last = input2.audNorm;
+  input3.last = input3.audNorm;
+
+  printValues(&input1);
+  printValues(&input2);
+  printValues(&input3);
+
   Serial.println();
 }
 
-void measureMode() {
+void measureMode(Input *input) {
   int thres = 606;
-  raw1 = analoggRead(SW1);
-  audioMode1 = raw1 > thres;
-  controlSign1 = raw1 > 1;
-
-  raw2 = analoggRead(SW2);
-  audioMode2 = raw2 > thres;
-  controlSign2 = raw2 > 1;
-
-  raw3 = analoggRead(SW3);
-  audioMode3 = raw3 > thres;
-  controlSign3 = raw3 > 1;
+  input->raw = analoggRead(input->switchPin);
+  input->audioMode = input->raw > thres;
+  input->controlSign = input->raw > 1;
+  
 }
 
-
-long measureSignal(int channel, boolean audioMode, long aux, boolean controlSign) {
+void measureSignal2(Input *input) {
   int adc = 0, amp = 0, audNorm = 0, mean = 0;
   long rms = 0;
   float dB = 0;
-  int numsamples = audioMode ? NUM_SAMPLES : NUM_SAMPLES_CTRL;
+  int numsamples = input->audioMode ? NUM_SAMPLES : NUM_SAMPLES_CTRL;
   for (int i = 0; i < numsamples; i++)  {
-    adc = 1023 - analoggRead(channel);
+    adc = 1023 - analoggRead(input->audioPin);
     amp = abs(adc - MEAN);
     rms += (long(amp) * amp);
     mean += adc;
@@ -146,37 +157,14 @@ long measureSignal(int channel, boolean audioMode, long aux, boolean controlSign
   rms /= numsamples;
   dB = 20.0 * log10(sqrt(rms) / MEAN);
 
-  if (audioMode) { 
-    audNorm = db2led(dB, aux);
+  if (input->audioMode) { 
+    input->audNorm = db2led(dB, input->last);
   } else {
-    audNorm = (40 * ((float)adc / 1024) - 20);
+    input->audNorm = (40 * ((float)adc / 1024) - 20);
   }
-  printValues(channel,audioMode, controlSign, adc, dB,audNorm);
-  return audNorm > 40 ? 40 : audNorm;
-}
-
-long measureSignal2(Input input) {
-  int adc = 0, amp = 0, audNorm = 0, mean = 0;
-  long rms = 0;
-  float dB = 0;
-  int numsamples = input.audioMode ? NUM_SAMPLES : NUM_SAMPLES_CTRL;
-  for (int i = 0; i < numsamples; i++)  {
-    adc = 1023 - analoggRead(input.audioPin);
-    amp = abs(adc - MEAN);
-    rms += (long(amp) * amp);
-    mean += adc;
-  }
-  mean /= NUM_SAMPLES_CTRL;
-  rms /= numsamples;
-  dB = 20.0 * log10(sqrt(rms) / MEAN);
-
-  if (input.audioMode) { 
-    input.audNorm = db2led(dB, input.aux);
-  } else {
-    input.audNorm = (40 * ((float)adc / 1024) - 20);
-  }
-  printValues(input.audioPin,input.audioMode, input.controlSign, adc, dB,input.audNorm);
-  return input.audNorm > 40 ? 40 : input.audNorm;
+  
+  input->audNorm = input->audNorm > 40 ? 40 : input->audNorm;
+  input->adc = adc;
 }
 
 int analoggRead(uint8_t pin) {
@@ -197,25 +185,12 @@ int analoggRead(uint8_t pin) {
   return (high << 8) | low;
 }
 
-void colorWipe() {
-  strip.clear();
-  if (audioMode1) {
-    audioWipe(audNorm1, OFF1);
+void colorWipe(boolean audioMode, boolean controlSign, long audNorm, int offset) {
+  if (audioMode) {
+    audioWipe(audNorm, offset);
   } else {
-    controlWipe(audNorm1, OFF1, controlSign1);
+    controlWipe(audNorm, offset, controlSign);
   }
-  if (audioMode2) {
-    audioWipe(audNorm2, OFF2);
-  } else {
-    controlWipe(audNorm2, OFF2, controlSign2);
-  }
-  if (audioMode3) {
-    audioWipe(audNorm3, OFF3);
-  } else {
-    controlWipe(audNorm3, OFF3, controlSign3);
-  }
-
-  strip.show();
 }
 
 void audioWipe(int value, int offset) {
@@ -234,7 +209,7 @@ void controlWipe(int value, int offset, boolean controlSign) {
   strip.setPixelColor(offset, controlSign ? green : red);
 }
 
-long db2led(float db, long aux) {
+long db2led(float db, long last) {
   int low = 0;
   int up = sizeof(lut) / sizeof(Map) - 1;
   int index = (low + up) / 2;
@@ -245,13 +220,13 @@ long db2led(float db, long aux) {
     index = (low + up) / 2;
   }
   led = lut[index].ledNumber;
-  if (led < aux) {
+  if (led < last) {
     if (led < 18 && led > 8) {
-      led = ceil(aux * dropFactor);
+      led = ceil(last * dropFactor);
     } else if (led >= 18) {
-      led = aux * 0.95;
+      led = last * 0.95;
     } else {
-      led = aux * dropFactor;
+      led = last * dropFactor;
     }
   }
 
@@ -299,8 +274,8 @@ void snake(int wait) {
   startup = LOW;
 }
 
-void printValues(int channel, boolean audioMode, boolean controlSign, long adc, float dB, long audNorm) {
-  switch (channel) {
+void printValues(Input *input) {
+  switch (input->audioPin) {
     case 16:
       Serial.print("|INPUT1");
       break;
@@ -315,14 +290,14 @@ void printValues(int channel, boolean audioMode, boolean controlSign, long adc, 
   }
 
   Serial.print(" ");
-  if (audioMode) {
+  if (input->audioMode) {
     Serial.print("aud");
   } else {
     Serial.print("ctl");
-    Serial.print(controlSign ? "+" : "-" );
+    Serial.print(input->controlSign ? "+" : "-" );
   }
   Serial.print("\t");
-  Serial.print(adc);
+  Serial.print(input->adc);
   Serial.print("\t");
-  Serial.print(audNorm);
+  Serial.print(input->audNorm);
 }
