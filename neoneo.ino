@@ -68,6 +68,8 @@ uint32_t green = strip.Color(0, 255, 0);
 uint32_t blue = strip.Color(0, 0, 255);
 uint32_t snakeColor = strip.Color(255, 30, 255);
 
+long start = 0;
+
 void setup() {
   if(debug) Serial.begin(9600);
   strip.begin();
@@ -84,16 +86,21 @@ void setup() {
 }
 
 void loop() {
+  
   measureSignal2(&input1);
   measureSignal2(&input2);
   measureSignal2(&input3);
 
-  strip.clear();
+  if(millis() - start > 30){
+    strip.clear();
+    start = millis();  
+  }
   
   colorWipe(input1.audioMode, input1.bottom, input1.top, input1.controlSign, input1.audNorm, input1.offset);
   colorWipe(input2.audioMode, input2.bottom, input2.top, input2.controlSign, input2.audNorm, input2.offset);
   colorWipe(input3.audioMode, input3.bottom, input3.top, input3.controlSign, input3.audNorm, input3.offset);
   strip.show();
+  
   
   measureMode(&input1);
   measureMode(&input2);
