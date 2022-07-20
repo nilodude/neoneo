@@ -45,3 +45,91 @@
 	-al hacer correctamente las operaciones con coma flotante no hay desajuste de +-1, por ahora, en ningún caso
 	-cuando audNorm vale 1 en ctrl+ deberia encenderse ya el primer led, y solo se enciende hasta que audNorm vale 2. solucionado.
 	-es posible que haya que ajustar la lut. cerca del final satura demasiado pronto.
+
+19/07/22:
+    -no se está usando la variable "mean" en el else de measureSignal2. kk
+    -se está acumulando adc en mean sin restarle MEAN. probar. kk
+    -probar la rutina de interrupcion ISR con varias entradas. al salir de la rutina se conmuta una bandera. al entrar en la rutina, segun bandera se lee entrada.
+
+20/07/22:
+    -para implementar bien la ISR hay que almacenar cada lectura en un array(buffer) y posteriormente ese array leerlo en en bucle principal
+el siguiente fragmento es el intento que he hecho, va muy muy lento, inviable pero da la impresion de que """funciona""" tanto la configuracion del ADC como el tema de poner a true y a false las distintas banderas pa leer las distintas entradas
+void setupADC(){
+   //clear ADCSRA and ADCSRB registers
+  ADCSRA = 0;
+  ADCSRB = 0;
+
+  ADMUX |= (1 << REFS0); //set reference voltage
+  //ADMUX |= (1 << ADLAR); //left align the ADC value- so we can read highest 8 bits from ADCH register only
+  //ADMUX |= (0 << ADLAR);
+  ADCSRA |= (1 << ADPS2) | (1 << ADPS0); //set ADC clock with 32 prescaler- 16mHz/32=500kHz
+  ADCSRA |= (1 << ADATE); //enabble auto trigger
+  ADCSRA |= (1 << ADIE); //enable interrupts when measurement complete
+  ADCSRA |= (1 << ADEN); //enable ADC
+  ADCSRA |= (1 << ADSC); //start ADC measurements
+}
+
+void measureSignal3(Input *input) {
+  input->top = input->bottom = 0;
+  int adc = 0, amp = 0;
+
+  input->adc = 1023 - input->adc;
+  amp = abs(adc - MEAN);
+  input->rms += (long(amp) * amp);
+
+  if(adc > input->top)
+    input->top = adc;
+
+  if(adc < input->bottom)
+    input->bottom = adc;
+ }
+
+ void normalize(Input *input){
+  float dB = 0;
+  int audNorm = 0;
+  input->rms /= NUM_SAMPLES;
+  dB = 20.0 * log10(sqrt(input->rms) / MEAN);
+
+  if (input->audioMode) {
+    audNorm = db2led(dB, input->last);
+  } else {
+    audNorm = (40 * ((float)input->adc / 1024) - 20);
+  }
+
+  input->audNorm = audNorm > 40 ? 40 : audNorm;
+
+}
+
+ISR(ADC_vect) {
+  uint8_t analog_reference = DEFAULT;
+  if (input1read) {
+    measureSignal3(&input3);
+    normalize(&input3);
+    i3count = 0;
+    i1count++;
+    input1.adc = (ADCH << 8) | ADCL ;// read
+    ADMUX = (analog_reference << 6) | (IN1 & 0x07);  // Set ADC to IN2
+    input1read = i1count < NUM_SAMPLES;
+    input2read = i1count == NUM_SAMPLES;      // Next measure IN2
+  } else if (input2read){
+    measureSignal3(&input1);
+    normalize(&input1);
+    i1count = 0;
+    i2count++;
+    input2.adc = (ADCH << 8) | ADCL; // read
+    ADMUX = (analog_reference << 6) | (IN2 & 0x07);
+    input2read = i2count < NUM_SAMPLES;
+    input3read = i2count == NUM_SAMPLES;
+  }else if(input3read){
+    measureSignal3(&input2);
+    normalize(&input2);
+    i2count = 0;
+    i3count++;
+    input2.adc = (ADCH << 8) | ADCL; // read
+    ADMUX = (analog_reference << 6) | (IN3 & 0x07);
+    input3read = i3count < NUM_SAMPLES;
+    input1read = i3count == NUM_SAMPLES;
+
+   }
+
+}

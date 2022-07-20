@@ -99,6 +99,7 @@ void loop() {
   colorWipe(input1.audioMode, input1.bottom, input1.top, input1.controlSign, input1.audNorm, input1.offset);
   colorWipe(input2.audioMode, input2.bottom, input2.top, input2.controlSign, input2.audNorm, input2.offset);
   colorWipe(input3.audioMode, input3.bottom, input3.top, input3.controlSign, input3.audNorm, input3.offset);
+  
   strip.show();
   
   
@@ -110,7 +111,11 @@ void loop() {
   input2.last = input2.audNorm;
   input3.last = input3.audNorm;
 
-  if(debug) printValues();
+  if(debug==1) {
+    printValues();
+  }else if(debug ==2){
+    plotValues();
+  }
   
 }
 
@@ -122,7 +127,7 @@ void measureMode(Input *input) {
 }
 
 void measureSignal2(Input *input) {
-  int adc = 0, amp = 0, audNorm = 0, mean = 0;
+  long adc = 0, amp = 0, audNorm = 0, mean = 0;
   long rms = 0;
   float dB = 0;
   int numsamples = input->audioMode ? NUM_SAMPLES : NUM_SAMPLES_CTRL;
@@ -259,6 +264,13 @@ void snake(int wait) {
   startup = LOW;
 }
 
+void plotValues(){
+  plotInput(&input1);
+  plotInput(&input2);
+  plotInput(&input3);
+  Serial.println();
+}
+
 void printValues(){
   printInput(&input1);
   printInput(&input2);
@@ -292,4 +304,8 @@ void printInput(Input *input) {
   Serial.print(input->adc);
   Serial.print("\t");
   Serial.print(input->audNorm);
+}
+
+void plotInput(Input *input){
+  Serial.print(input->adc);  
 }
