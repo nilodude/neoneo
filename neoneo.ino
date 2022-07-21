@@ -30,7 +30,7 @@ int raw2 = 0;
 int raw3 = 0;
 
 boolean startup = HIGH;
-
+boolean ud = LOW;
 float dropFactor = .89;
 
 struct Map {
@@ -47,14 +47,12 @@ struct Input {
   boolean audioMode;
   boolean controlSign;
   long audNorm;
-  int top;
-  int bottom;
   long last;
 };
 
-Input input1 = {IN1, SW1,OFF1,0,0,LOW,LOW,0,0,0,0};
-Input input2 = {IN2, SW2, OFF2,0,0,LOW,LOW,0,0,0,0};
-Input input3 = {IN3, SW3, OFF3,0,0,LOW,LOW,0,0,0,0};
+Input input1 = {IN1, SW1,OFF1,0,0,LOW,LOW,0,0};
+Input input2 = {IN2, SW2, OFF2,0,0,LOW,LOW,0,0};
+Input input3 = {IN3, SW3, OFF3,0,0,LOW,LOW,0,0};
 
 const Map lut[] = {
   { -30.5, 1},  { -30, 2},  { -30, 3},  { -26, 4},  { -25, 5}, { -24, 6},    { -23, 7 },    { -22, 8 },   { -21, 9},  { -20, 10},
@@ -62,13 +60,23 @@ const Map lut[] = {
 };
 
 Adafruit_NeoPixel strip(LED_COUNT, LED_PIN, NEO_GRB + NEO_KHZ800);
+Adafruit_NeoPixel prevStrip(LED_COUNT, LED_PIN, NEO_GRB + NEO_KHZ800);
 
 uint32_t red = strip.Color(255, 0, 0);
 uint32_t green = strip.Color(0, 255, 0);
 uint32_t blue = strip.Color(0, 0, 255);
 uint32_t snakeColor = strip.Color(255, 30, 255);
 
-long start = 0;
+uint32_t previous[60] = {};
+int fadeCount = 1;
+
+uint32_t fadeMillis = 0;
+uint32_t lastFadeMillis = 0;
+
+
+uint32_t currentMillis = 0;
+uint32_t lastMillis = 0;
+
 
 void setup() {
   if(debug) Serial.begin(9600);
@@ -91,14 +99,12 @@ void loop() {
   measureSignal2(&input2);
   measureSignal2(&input3);
 
-  if(millis() - start > 30){
-    strip.clear();
-    start = millis();  
-  }
   
-  colorWipe(input1.audioMode, input1.bottom, input1.top, input1.controlSign, input1.audNorm, input1.offset);
-  colorWipe(input2.audioMode, input2.bottom, input2.top, input2.controlSign, input2.audNorm, input2.offset);
-  colorWipe(input3.audioMode, input3.bottom, input3.top, input3.controlSign, input3.audNorm, input3.offset);
+  
+  //strip.clear();
+  colorWipe(input1.audioMode, input1.controlSign, input1.audNorm, input1.offset);
+  colorWipe(input2.audioMode, input2.controlSign, input2.audNorm, input2.offset);
+  colorWipe(input3.audioMode, input3.controlSign, input3.audNorm, input3.offset);
   
   strip.show();
   
@@ -136,11 +142,6 @@ void measureSignal2(Input *input) {
     amp = abs(adc - MEAN);
     rms += (long(amp) * amp);
     mean += adc;
-    if(adc > input->top)
-      input->top = adc;
-    
-    if(adc < input->bottom)
-      input->bottom = adc;
   }
   mean /= NUM_SAMPLES_CTRL;
   rms /= numsamples;
@@ -175,26 +176,76 @@ int analoggRead(uint8_t pin) {
   return (high << 8) | low;
 }
 
-void colorWipe(boolean audioMode, int bottom, int top , boolean controlSign, long audNorm, int offset) {
+void colorWipe(boolean audioMode, boolean controlSign, long audNorm, int offset) {
   if (audioMode) {
     audioWipe(audNorm, offset);
   } else {
-    controlWipe(audNorm, bottom, top, offset, controlSign);
+    //if "its time" to update, update, if not, smoothly substract brightness from last value
+    //if(shouldUpdate) controlWipe();
+    //else dropSmoothly();
+    //va por buen camino pero es necesario comprobar que se esta accediendo realmente a la posicion correcta del array
+    fadeMillis = millis();
+    
+    if((fadeMillis -  lastFadeMillis) > 0){
+      fadeCount = 0;
+      controlWipe(audNorm, offset, controlSign);
+      lastFadeMillis = fadeMillis;
+    } else {
+      if(fadeCount < 5){
+        fadeCount++;
+        for(int i= 1+offset; i<=offset +20;i++){
+          //if(prevStrip.getPixelColor(i-1) > 0){
+            uint32_t currentColor = prevStrip.getPixelColor(i-1);
+            uint8_t currentRed = Red(currentColor);
+            uint8_t currentGreen = Green(currentColor);
+  
+            //uint32_t newColor = controlSign ? strip.Color(0,currentGreen - 2,0) : strip.Color(0,currentRed - 2,0);
+          
+            strip.setPixelColor(i-1, strip.Color(0,currentGreen - 10,0));
+            prevStrip.setPixelColor(i-1, strip.Color(0,currentGreen - 10,0));
+          //}else{
+            //strip.setPixelColor(i-1, 0);
+            //prevStrip.setPixelColor(i-1, 0);
+          //}
+        }
+      }
+    }
   }
 }
+
+uint8_t Red(uint32_t color){
+  return (color >> 16) & 0xFF;
+}
+
+uint8_t Green(uint32_t color){
+   return (color >> 8) & 0xFF;
+}
+
+uint8_t Blue(uint32_t color)
+{
+  return color & 0xFF;
+}
+
 
 void audioWipe(int value, int offset) {
   for (int i = 1 + offset; i <= value + offset; i++)
     strip.setPixelColor(i - 1, greenRedFade(i - offset));
 }
 
-void controlWipe(int value, int top, int bottom, int offset, boolean controlSign) {
+void controlWipe(int value, int offset, boolean controlSign) {
   if (value + offset < 0 + offset) {
-    for (int i = 20 + offset; i > 20 - abs(value) + offset; i--)
+    for (int i = 20 + offset; i > 20 - abs(value) + offset; i--){
       strip.setPixelColor(i - 1, red);
+      prevStrip.setPixelColor(i-1, red);
+      //try to store pixel values in a different AdaFruit_Neopixel variable "previousStrip"
+      //previous[i-1] = red;
+    }
   } else {
-    for (int i = 1 + offset; i <= value + offset; i++)
+    for (int i = 1 + offset; i <= value + offset; i++){
       strip.setPixelColor(i, green);
+      prevStrip.setPixelColor(i-1, green);
+      //previous[i-1] = green;
+    }
   }
   strip.setPixelColor(offset, controlSign ? green : red);
 }
@@ -221,6 +272,10 @@ long db2led(float db, long last) {
   }
 
   return led;
+}
+
+uint32_t redFade(int b){
+  return strip.Color(b,0,0);
 }
 
 uint32_t greenRedFade(long i) {
