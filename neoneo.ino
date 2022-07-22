@@ -67,15 +67,7 @@ uint32_t green = strip.Color(0, 255, 0);
 uint32_t blue = strip.Color(0, 0, 255);
 uint32_t snakeColor = strip.Color(255, 30, 255);
 
-uint32_t previous[60] = {};
 int fadeCount = 1;
-
-uint32_t fadeMillis = 0;
-uint32_t lastFadeMillis = 0;
-
-
-uint32_t currentMillis = 0;
-uint32_t lastMillis = 0;
 
 
 void setup() {
@@ -89,8 +81,6 @@ void setup() {
   measureMode(&input1);
   measureMode(&input2);
   measureMode(&input3);
-
-  //Serial.println(input1.audioPin);
 }
 
 void loop() {
@@ -99,15 +89,12 @@ void loop() {
   measureSignal2(&input2);
   measureSignal2(&input3);
 
-  
-  
   //strip.clear();
   colorWipe(input1.audioMode, input1.controlSign, input1.audNorm, input1.offset);
   colorWipe(input2.audioMode, input2.controlSign, input2.audNorm, input2.offset);
   colorWipe(input3.audioMode, input3.controlSign, input3.audNorm, input3.offset);
   
   strip.show();
-  
   
   measureMode(&input1);
   measureMode(&input2);
@@ -180,34 +167,36 @@ void colorWipe(boolean audioMode, boolean controlSign, long audNorm, int offset)
   if (audioMode) {
     audioWipe(audNorm, offset);
   } else {
-    //if "its time" to update, update, if not, smoothly substract brightness from last value
-    //if(shouldUpdate) controlWipe();
-    //else dropSmoothly();
-    //va por buen camino pero es necesario comprobar que se esta accediendo realmente a la posicion correcta del array
     
-      if(fadeCount > 3){
+    
+      if(fadeCount > 2){
         fadeCount = 0;
-        controlWipe(audNorm, offset, controlSign);
-        lastFadeMillis = fadeMillis;
+        //controlWipe(audNorm, offset, controlSign);
       }else{
+        controlWipe(audNorm, offset, controlSign);
         fadeCount++;
         for(int i= 1+offset; i<=offset +19;i++){
           if(prevStrip.getPixelColor(i-1) > 0){
             uint32_t currentColor = prevStrip.getPixelColor(i-1);
             uint8_t currentRed = Red(currentColor);
             uint8_t currentGreen = Green(currentColor);
-  
-            //uint32_t newColor = controlSign ? strip.Color(0,currentGreen - 2,0) : strip.Color(0,currentRed - 2,0);
+
+            uint8_t newGreen = max(0,currentGreen - 15);
+            uint8_t newRed = max(0,currentRed - 15);
+            
+            uint32_t newColor = controlSign ? strip.Color(0,newGreen,0) : strip.Color(0,newRed,0);
+            strip.setPixelColor(i-1, newColor);
+            prevStrip.setPixelColor(i-1, newColor);
+
           
-            strip.setPixelColor(i-1, strip.Color(0,currentGreen - 5,0));
-            prevStrip.setPixelColor(i-1, strip.Color(0,currentGreen - 5,0));
+            //strip.setPixelColor(i-1, strip.Color(0,currentGreen - 5,0));
+            //prevStrip.setPixelColor(i-1, strip.Color(0,currentGreen - 5,0));
           }else{
             strip.setPixelColor(i-1, 0);
             //prevStrip.setPixelColor(i-1, 0);
           }
         }
       }
-    
   }
 }
 
