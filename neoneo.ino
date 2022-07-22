@@ -175,14 +175,14 @@ void colorWipe(boolean audioMode, boolean controlSign, long audNorm, int offset)
       }else{
         controlWipe(audNorm, offset, controlSign);
         fadeCount++;
-        for(int i= 1+offset; i<=offset +19;i++){
+        for(int i= 1+offset; i<=offset +20;i++){
           //if(prevStrip.getPixelColor(i-1) > 0){
             uint32_t currentColor = prevStrip.getPixelColor(i-1);
             uint8_t currentRed = Red(currentColor);
             uint8_t currentGreen = Green(currentColor);
 
-            uint8_t newGreen = max(0,currentGreen - 15);
-            uint8_t newRed = max(0,currentRed - 10);
+            uint8_t newGreen = max(0,currentGreen - 27);
+            uint8_t newRed = max(0,currentRed - 27);
             
             uint32_t newColor = controlSign ? strip.Color(0,newGreen,0) : strip.Color(newRed,0,0);
             strip.setPixelColor(i-1, newColor);
