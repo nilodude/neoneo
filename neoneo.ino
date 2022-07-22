@@ -184,32 +184,30 @@ void colorWipe(boolean audioMode, boolean controlSign, long audNorm, int offset)
     //if(shouldUpdate) controlWipe();
     //else dropSmoothly();
     //va por buen camino pero es necesario comprobar que se esta accediendo realmente a la posicion correcta del array
-    fadeMillis = millis();
     
-    if((fadeMillis -  lastFadeMillis) > 0){
-      fadeCount = 0;
-      controlWipe(audNorm, offset, controlSign);
-      lastFadeMillis = fadeMillis;
-    } else {
-      if(fadeCount < 5){
+      if(fadeCount > 3){
+        fadeCount = 0;
+        controlWipe(audNorm, offset, controlSign);
+        lastFadeMillis = fadeMillis;
+      }else{
         fadeCount++;
-        for(int i= 1+offset; i<=offset +20;i++){
-          //if(prevStrip.getPixelColor(i-1) > 0){
+        for(int i= 1+offset; i<=offset +19;i++){
+          if(prevStrip.getPixelColor(i-1) > 0){
             uint32_t currentColor = prevStrip.getPixelColor(i-1);
             uint8_t currentRed = Red(currentColor);
             uint8_t currentGreen = Green(currentColor);
   
             //uint32_t newColor = controlSign ? strip.Color(0,currentGreen - 2,0) : strip.Color(0,currentRed - 2,0);
           
-            strip.setPixelColor(i-1, strip.Color(0,currentGreen - 10,0));
-            prevStrip.setPixelColor(i-1, strip.Color(0,currentGreen - 10,0));
-          //}else{
-            //strip.setPixelColor(i-1, 0);
+            strip.setPixelColor(i-1, strip.Color(0,currentGreen - 5,0));
+            prevStrip.setPixelColor(i-1, strip.Color(0,currentGreen - 5,0));
+          }else{
+            strip.setPixelColor(i-1, 0);
             //prevStrip.setPixelColor(i-1, 0);
-          //}
+          }
         }
       }
-    }
+    
   }
 }
 
