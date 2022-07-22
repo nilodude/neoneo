@@ -171,30 +171,30 @@ void colorWipe(boolean audioMode, boolean controlSign, long audNorm, int offset)
     
       if(fadeCount > 2){
         fadeCount = 0;
-        //controlWipe(audNorm, offset, controlSign);
+        controlWipe(audNorm, offset, controlSign);
       }else{
         controlWipe(audNorm, offset, controlSign);
         fadeCount++;
         for(int i= 1+offset; i<=offset +19;i++){
-          if(prevStrip.getPixelColor(i-1) > 0){
+          //if(prevStrip.getPixelColor(i-1) > 0){
             uint32_t currentColor = prevStrip.getPixelColor(i-1);
             uint8_t currentRed = Red(currentColor);
             uint8_t currentGreen = Green(currentColor);
 
             uint8_t newGreen = max(0,currentGreen - 15);
-            uint8_t newRed = max(0,currentRed - 15);
+            uint8_t newRed = max(0,currentRed - 10);
             
-            uint32_t newColor = controlSign ? strip.Color(0,newGreen,0) : strip.Color(0,newRed,0);
+            uint32_t newColor = controlSign ? strip.Color(0,newGreen,0) : strip.Color(newRed,0,0);
             strip.setPixelColor(i-1, newColor);
             prevStrip.setPixelColor(i-1, newColor);
 
           
             //strip.setPixelColor(i-1, strip.Color(0,currentGreen - 5,0));
             //prevStrip.setPixelColor(i-1, strip.Color(0,currentGreen - 5,0));
-          }else{
-            strip.setPixelColor(i-1, 0);
+          //}else{
+            //strip.setPixelColor(i-1, 0);
             //prevStrip.setPixelColor(i-1, 0);
-          }
+          //}
         }
       }
   }
@@ -224,14 +224,11 @@ void controlWipe(int value, int offset, boolean controlSign) {
     for (int i = 20 + offset; i > 20 - abs(value) + offset; i--){
       strip.setPixelColor(i - 1, red);
       prevStrip.setPixelColor(i-1, red);
-      //try to store pixel values in a different AdaFruit_Neopixel variable "previousStrip"
-      //previous[i-1] = red;
     }
   } else {
     for (int i = 1 + offset; i <= value + offset; i++){
       strip.setPixelColor(i, green);
       prevStrip.setPixelColor(i-1, green);
-      //previous[i-1] = green;
     }
   }
   strip.setPixelColor(offset, controlSign ? green : red);
