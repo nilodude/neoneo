@@ -64,8 +64,10 @@ uint32_t green = strip.Color(0, 255, 0);
 uint32_t blue = strip.Color(0, 0, 255);
 uint32_t snakeColor = strip.Color(255, 30, 255);
 
+boolean debug = LOW;
+
 void setup() {
-  Serial.begin(9600);
+   if(debug) Serial.begin(9600);
   strip.begin();
   strip.show();
   strip.setBrightness(4);
@@ -87,7 +89,7 @@ void loop() {
   aux1 = audNorm1;
   aux2 = audNorm2;
   aux3 = audNorm3;
-  Serial.println();
+  if(debug) Serial.println();
 }
 
 void measureMode() {
@@ -107,7 +109,7 @@ void measureMode() {
 
 
 long measureSignal(int channel, boolean audioMode, long aux, boolean controlSign) {
-  int adc = 0, amp = 0, audNorm = 0, mean = 0;
+  long adc = 0, amp = 0, audNorm = 0;
   long rms = 0;
   float dB = 0;
   int numsamples = audioMode ? NUM_SAMPLES : NUM_SAMPLES_CTRL;
@@ -115,9 +117,7 @@ long measureSignal(int channel, boolean audioMode, long aux, boolean controlSign
     adc = 1023 - analoggRead(channel);
     amp = abs(adc - MEAN);
     rms += (long(amp) * amp);
-    mean += adc;
   }
-  mean /= NUM_SAMPLES_CTRL;
   rms /= numsamples;
   dB = 20.0 * log10(sqrt(rms) / MEAN);
 
@@ -126,7 +126,7 @@ long measureSignal(int channel, boolean audioMode, long aux, boolean controlSign
   } else {
     audNorm = (40 * ((float)adc / 1024) - 20);
   }
-  printValues(channel,audioMode, controlSign, adc, dB,audNorm);
+  if(debug) printValues(channel,audioMode, controlSign, adc, dB,audNorm);
   return audNorm > 40 ? 40 : audNorm;
 }
 
