@@ -45,7 +45,7 @@ long led3 = 0;
 
 boolean startup = HIGH;
 
-float dropFactor = .89;
+float dropFactor = .94;
 
 struct Map {
   float dbValue;
